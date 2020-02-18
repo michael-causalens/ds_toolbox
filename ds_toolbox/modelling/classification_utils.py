@@ -1,0 +1,312 @@
+"""
+classification_utils.py
+
+Helper functions for classification problems, including exploration, model testing and visualisation.
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import roc_auc_score, roc_curve, average_precision_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+
+
+def get_model_probs(model, X_train, X_test):
+    """
+    Get class probabilities for train and test samples from pre-trained model.
+
+    Parameters
+    ----------
+    model : obj
+        Pre-trained classification model. Typically a scikit-learn classification
+        estimator but can in principle be any object with a `predict_prob()` method.
+    X_train, X_test : array-like
+        Train and test feature arrays. Can be numpy arrays, dataframes, series or lists.
+
+    Returns
+    -------
+    Tuple of numpy arrays (train and test) of dimension `n_samples x n_classes`
+    containing class probabilities for each sample
+    """
+
+    train_pred = model.predict_proba(X_train)
+    test_pred = model.predict_proba(X_test)
+    return train_pred, test_pred
+
+
+def get_best_threshold(model, metric_fn, X_train, X_test, y_test):
+    """
+    Get the value of the model's classification probability threshold that maximises the
+    specified classification metric over the test set.
+
+    Parameters
+    ----------
+    model : obj
+        Pre-trained classification model. Typically a scikit-learn classification
+        estimator but can in principle be any object with a `predict_prob()` method.
+    metric_fn : obj
+        classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
+        `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
+    X_train, X_test, y_test : array-like
+        Train and test data output from `train_test_split()`
+
+    Returns
+    -------
+    best_threshold: float
+        Threshold that maximises `metric_fn`
+    """
+
+    train_pred, test_pred = get_model_probs(model, X_train, X_test)
+
+    metric_max = 0
+    best_threshold = 0.5
+    for threshold in np.arange(0.1, 1, 0.05):
+
+        test_preds_at_threshold = (test_pred[:, 1] > threshold)  # .astype(int)
+        test_metric_at_threshold = metric_fn(y_test, test_preds_at_threshold)
+
+        if test_metric_at_threshold > metric_max:
+            metric_max = test_metric_at_threshold
+            best_threshold = threshold
+
+    return best_threshold
+
+
+def get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_test):
+    """
+    Print various classification metrics for a model on training and test data
+    at the value of the threshold that optimizes `metric_fn`.
+
+    Parameters
+    ----------
+    model : list
+        List of pre-trained classification models. These must all have a `predict_prob()` method.
+    metric_fn : obj
+        classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
+        `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
+    X_train, X_test, y_train, y_test : array-like
+        Train and test data.
+
+    Returns
+    -------
+    A pandas DataFrame with classification metrics as index and a column each for train and test.
+    """
+
+    train_pred, test_pred = get_model_probs(model, X_train, X_test)
+    best_threshold = get_best_threshold(model, metric_fn, X_train, X_test, y_test)
+
+    train_pred_best = (train_pred[:, 1] > best_threshold)
+    test_pred_best = (test_pred[:, 1] > best_threshold)
+
+    df_metrics = pd.DataFrame(columns=['Train', 'Test'])
+    df_metrics.index.name = "Metric"
+
+    metrics_dict = {"Accuracy": accuracy_score,
+                    "Precision": precision_score,
+                    "Recall": recall_score,
+                    "F1": f1_score,
+                    "ROCAUC": roc_auc_score,
+                    "APC": average_precision_score}
+
+    for metric_string, metric_function in metrics_dict.items():
+        train_score = metric_function(y_train, train_pred_best)
+        test_score = metric_function(y_test, test_pred_best)
+        df_metrics.loc[metric_string] = [train_score, test_score]
+
+    return df_metrics
+
+
+def get_confusion_matrix():
+    pass
+
+
+def compare_model_metrics(models, metric_fn, X_train, X_test, y_train, y_test, model_names: list):
+    """
+    Compare classification performance metrics across several models.
+    Note that because a classifier performance depends on the chosen threshold,
+    first this finds the threshold for each model that optimizes `metric_fn`, then compares
+    the models' performance in several metrics, but with each at its "best threshold"
+    for a given user-provided metric (e.g. f1_score).
+
+
+    Parameters
+    ----------
+    models : list
+        List of pre-trained classification models. These must all have a `predict_prob()` method.
+    metric_fn : obj
+        classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
+        `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
+    X_train, X_test, y_train, y_test : array-like
+        Train and test data.
+    model_names : list of strs
+        Names of models.
+
+    Returns
+    -------
+    A pandas DataFrame with classification metrics as index and a column for each model.
+    """
+
+    if not isinstance(models, list):
+        raise TypeError("First argument (models) should be a list of pre-trained models")
+
+    if not len(models) == len(model_names):
+        raise ValueError("models and model_names should be the same length")
+
+    df_metrics = pd.DataFrame()
+    for i, model in enumerate(models):
+        model_metrics = get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_test)
+        model_metrics = model_metrics["Test"]  # compare test set only
+
+        model_metrics.name = model_names[i]
+        df_metrics = pd.concat([df_metrics, model_metrics], axis=1, sort=False)
+
+    return df_metrics
+
+
+def compare_model_predictions(y_preds: list, y_true, model_names: list):
+    """
+    Compare classification metrics across several models to a single test set
+    in case where one or more model does not have a `predict_prob()` method and
+    so `compare_model_metrics()` cannot be used.
+    This compares the output predictions from each model directly.
+    Useful for comparing ML predictions to simple baselines (constant, random etc.)
+
+    Parameters
+    ----------
+    y_preds : list
+        List (of length n_models) of numpy arrays of predicted labels
+    y_true : array-like
+        Numpy array of actual labels.
+    model_names : list
+        List of strings of model names.
+
+    Returns
+    -------
+    A pandas DataFrame with classification metrics as index and a column for each model.
+    """
+    metrics_dict = {"Accuracy": accuracy_score,
+                    "Precision": precision_score,
+                    "Recall": recall_score,
+                    "F1": f1_score,
+                    "ROCAUC": roc_auc_score,
+                    "APC": average_precision_score}
+
+    n_models = len(y_preds)
+    assert len(model_names) == n_models, "y_preds and model_names must be same length"
+
+    df_metrics = pd.DataFrame()
+
+    for i in range(n_models):
+        y_pred = y_preds[i]
+        model_name = model_names[i]
+
+        for metric_string, metric_function in metrics_dict.items():
+            metric_result = metric_function(y_true, y_pred)
+            df_metrics.loc[metric_string, model_name] = metric_result
+
+    return df_metrics
+
+
+def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, density=False, nbins=10):
+    """
+    Plot distributions of each feature in X_feat split by predicted classes,
+    i.e a row for each feature, a column for each class and on each subplot
+    separate distributions for correctly and incorrectly labelled events.
+
+    Parameters
+    ----------
+    X_feat : array-like
+        Numpy array of features data, of shape (n_samples, n_features)
+    y_pred : array-like
+        Numpy array of predicted labels
+    y_true : array-like
+        Numpy array of true labels
+    feature_names : list (optional)
+        List of string feature names. Default is "x1", "x2" etc.
+    density : bool (default=False)
+        Normalise the distributions to unit area
+    nbins : int
+        Number of bins in histogram. Default is 10.
+
+    Returns
+    -------
+    matplotlib.figure.Figure object with (n_features * n_classes) subplots
+    """
+
+    n_features = X_feat.shape[1]
+    n_classes = len(set(y_pred))
+
+    if feature_names is None:
+        feature_names = [f"x{i + 1}" for i in range(n_features)]
+
+    fig, axs = plt.subplots(nrows=n_features, ncols=n_classes, figsize=(10, 10))
+    for row_idx in range(len(axs)):
+
+        ax_row = axs[row_idx]
+        for col_idx in range(len(ax_row)):
+
+            correct_pred_mask = (y_pred == y_true) & (y_true == col_idx)
+            incorrect_pred_mask = (y_pred != y_true) & (y_true == col_idx)
+
+            x_correct = X_feat[correct_pred_mask][:, row_idx]
+            x_incorrect = X_feat[incorrect_pred_mask][:, row_idx]
+
+            bins_start = min(min(x_correct), min(x_incorrect))
+            bins_end = max(max(x_correct), max(x_incorrect))
+            bins = np.linspace(bins_start, bins_end, nbins+1)
+            
+            ax = ax_row[col_idx]
+            ax.hist(x_correct, bins=bins, density=density, label="pred correct", color="forestgreen", alpha=0.6)
+            ax.hist(x_incorrect, bins=bins, density=density, label="pred incorrect", color="red", alpha=0.4)
+            ax.set_xlabel(f"{feature_names[row_idx]} for class {col_idx}")
+
+            if density:
+                ax.set_ylabel("Probability density")
+            else:
+                ax.set_ylabel("Frequency")
+
+            ax.legend()
+    fig.suptitle("Distribution of predicted labels", y=1.02)
+    fig.tight_layout()
+
+
+def _get_roc_curve(estimator, X_feat, y_true):
+    scores = estimator.predict_proba(X_feat)[:, 1]
+    fpr, tpr, thresh = roc_curve(y_true, scores)
+    return fpr, tpr, thresh
+
+
+def plot_rocs(estimators, X_feat, y_true, model_names=None):
+    """
+    Plot ROC curves for classification models.
+
+    Parameters
+    ----------
+    estimators : array-like
+        List of fitted models, must have a `predict_proba()` method to get ROC curve
+    X_feat : array-like
+        Numpy array of features data, of shape (n_samples, n_features)
+    y_true : array-like
+        Numpy array of true labels
+    model_names : array-like (optional)
+        List of strings of model names. Defaults to "model 1, 2" etc.
+
+    Returns
+    -------
+    matplotlib.figure of ROC curves (true positive rate vs. false positive rate)
+    """
+
+    plt.figure(figsize=(6, 4))
+
+    if model_names is None:
+        model_names = [f"model {i + 1}" for i in range(len(estimators))]
+
+    for i, estimator in enumerate(estimators):
+        fpr, tpr, thresh = _get_roc_curve(estimator, X_feat, y_true)
+        plt.plot(fpr, tpr, label=model_names[i])
+
+    plt.xlabel("false positive rate")
+    plt.ylabel("true positive rate")
+    plt.legend()
+    plt.show()

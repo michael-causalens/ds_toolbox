@@ -1,0 +1,110 @@
+"""
+visualisation.py
+
+Generic plotting functions
+
+@todo: more color palettes, scatter, violin,
+
+"""
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import r2_score
+
+plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
+               "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
+               "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse"]
+
+
+def barplot(df_in, col_name=None, normed=False, **kwargs):
+    """
+    Bar chart of value counts for a categorical column
+
+    Parameters
+    ----------
+    df_in : pandas.Dataframe
+        data
+    col_name : str or list of strs
+        Which column(s) to plot
+    normed : bool
+        Sum heights of bars to 1 rather than total counts
+    **kwargs
+        Options for matplotlib, such as "xlabel", "ylabel", "title"
+
+    """
+    data = df_in[col_name]
+
+    if normed:
+        data = data / data.sum()
+    x, y = data.index, data.values
+    plt.figure(figsize=(15, 6))
+    plt.bar(x, y, alpha=1, width=0.5, color="royalblue")
+    plt.xticks(x)
+    plt.xlabel(kwargs.get("xlabel"))
+    plt.ylabel(kwargs.get("ylabel"))
+    plt.title(kwargs.get("title"))
+    plt.show()
+    
+    
+def countplot_sns(df_in, col_name, normed=True, **kwargs):
+    """
+    Seaborn countplot of value counts for a categorical column
+
+    Parameters
+    ----------
+    df_in : pandas.Dataframe
+        data
+    col_name : str or list of strs
+        Which column(s) to plot
+    normed : bool
+        Sum heights of bars to 1 rather than total counts
+    **kwargs
+        Options for seaborn.countplot()
+
+    """
+    vc = df_in[col_name].value_counts(normalize=normed).sort_index()
+    plt.figure(figsize=(15, 6))
+    sns.countplot(x=col_name, data=df_in, order=vc.index, **kwargs)
+    plt.xticks(rotation=45)
+    plt.xlabel(kwargs.get("xlabel"))
+    plt.ylabel(kwargs.get("ylabel"))
+    plt.title(kwargs.get("title"))
+    plt.show()
+
+
+def plot_r2(y_pred, y_true, **kwargs):
+    """
+    # @todo: does this belong in regression utils instead?
+    Scatter plot of y_predicted vs. actuals and associated R^2 score.
+    Parameters
+    ----------
+    y_pred, y_true : numpy.array
+        predicted and actual values of target
+    target : str (optional)
+        Name of target to display on axes labels. If None, labels are "predicted" and "actual"
+    **kwargs
+        Options for pyplot.scatter(), such as title
+    """
+
+    assert len(y_pred) == len(y_true), "Input arrays must be same shape"
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    plt.title(kwargs["title"])
+    ax.scatter(x=y_pred, y=y_true, marker='o', color='springgreen', label='')
+
+    # plot y = x to show deviations
+    ax.plot(range(np.ceil(max(y_true)) + 1), color='firebrick')
+
+    limits = min(min(y_pred), min(y_true)), max(max(y_pred), max(y_true))
+    plt.xlim((limits[0], limits[1]))
+    plt.ylim((limits[0], limits[1]))
+    plt.xlabel('Predicted value')
+    plt.ylabel('True value')
+
+    r2 = r2_score(y_pred, y_true)
+    # r2 text box
+    props = dict(boxstyle='round', facecolor='white', alpha=0.5)
+    ax.text(0.05, 0.95, 'R$^2$ = {:.3f}'.format(r2), fontsize=14, transform=ax.transAxes, verticalalignment='top',
+            bbox=props)
+
+    plt.grid(b=True, color='grey', linestyle=':', linewidth=0.5)
