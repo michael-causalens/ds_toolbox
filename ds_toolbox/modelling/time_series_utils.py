@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from pandas.tseries.frequencies import to_offset
 
 from statsmodels.tsa.stattools import adfuller
 from ..visualisation import plot_colors
@@ -152,16 +153,14 @@ def _get_plot_ticks(data_df, tick_freq):
     return inferred_ticks
 
 
-def plot_candlesticks(data, freq="B", start_date=None, end_date=None, **kwargs):
+def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
     """
     Candlestick finance plot. Only a single time-series can be provided at a time.
 
     Parameters
     ----------
-    data : pandas.Series
-        Single time-series
-    freq : str
-        Downsampled frequency. Default is "B" for business days.
+    data_in : pandas.Dataframe
+        Single time-series converted to OHLC format (see DataFrame.resample().ohlc())
         For a list see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
@@ -172,44 +171,52 @@ def plot_candlesticks(data, freq="B", start_date=None, end_date=None, **kwargs):
     -------
     a matplotlib.figure.Figure object
 
+    Raises
+    ------
+    ValueError
+        If DataFrame does not have exactly 4 columns labelled "open", "high", "low", "close".
+        Case-insensitive.
     """
 
-    # convert Dataframe to Series if possible
-    if isinstance(data, pd.DataFrame):
-        if data.shape[1] != 1:
-            raise ValueError(f"Can only plot a single time-series, {data.shape[1]} requested.")
-        data = data.iloc[:, 0]
+    candle_data = data_in.copy()
+
+    if candle_data.shape[1] != 4:
+        raise ValueError(f"OHLC plot requires exactly 4 columns, {candle_data.shape[1]} provided")
 
     if start_date is not None:
-        data = data[data.index >= start_date]
+        candle_data = candle_data[candle_data.index >= start_date]
     if end_date is not None:
-        data = data[data.index <= end_date]
+        candle_data = candle_data[candle_data.index <= end_date]
 
-    candle_data = data.resample(freq).ohlc()
-    if len(candle_data) > len(data):
-        raise ValueError("Downsampled frequency should be less than original.")
-    if len(candle_data) == 0:
-        raise ValueError("No data to plot. Perhaps change start_date and/or end_date.")
+    candle_data.columns = [x.lower() for x in candle_data.columns]
 
     up = candle_data[candle_data.close > candle_data.open]
     down = candle_data[candle_data.close < candle_data.open]
 
     plt.figure(figsize=(15, 6))
+
+    # pyplot bar width units are always in days, need to convert width to frequency of data
+    freq_str = candle_data.index.freqstr
+
+    # business days have the same width as calendar days
+    if freq_str == "B":
+        freq_str = "D"
+    divisor = pd.Timedelta(1, "D") / pd.to_timedelta(to_offset(freq_str))
+
     # positive returns in green
-    plt.bar(up.index, up.close - up.open, 1, bottom=up.open, color='g')
-    plt.bar(up.index, up.high - up.close, 0.2, bottom=up.close, color='g')
-    plt.bar(up.index, up.low - up.open, 0.2, bottom=up.open, color='g')
+    plt.bar(up.index, up.close - up.open, 1 / divisor, bottom=up.open, color='g')
+    plt.bar(up.index, up.high - up.close, 0.2 / divisor, bottom=up.close, color='g')
+    plt.bar(up.index, up.low - up.open, 0.2 / divisor, bottom=up.open, color='g')
 
     # negative returns in red
-    plt.bar(down.index, down.close - down.open, 1, bottom=down.open, color='r')
-    plt.bar(down.index, down.high - down.open, 0.2, bottom=down.open, color='r')
-    plt.bar(down.index, down.low - down.close, 0.2, bottom=down.close, color='r')
+    plt.bar(down.index, down.close - down.open, 1 / divisor, bottom=down.open, color='r')
+    plt.bar(down.index, down.high - down.open, 0.2 / divisor, bottom=down.open, color='r')
+    plt.bar(down.index, down.low - down.close, 0.2 / divisor, bottom=down.close, color='r')
 
     if kwargs.get("tick_freq"):
         plt.xticks(candle_data.index[::kwargs.get("tick_freq")], rotation=45)
     else:
         plt.xticks(rotation=45)
-    plt.yticks()
     plt.title(kwargs.get("title"), fontsize=kwargs.get("fontsize"))
 
     plt.xlabel(kwargs.get("xlabel"), fontsize=kwargs.get("fontsize"))
