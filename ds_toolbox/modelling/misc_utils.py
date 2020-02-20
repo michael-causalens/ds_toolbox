@@ -28,7 +28,7 @@ def count_nans(df_in, header=None):
     return nan_counts
 
 
-def count_nan_fracs(df_in, header=None):
+def count_nan_fracs(df_in, header=None, percent=False):
     """
     Get fraction of nans in each column
 
@@ -37,6 +37,8 @@ def count_nan_fracs(df_in, header=None):
     df_in : pandas DataFrame or Series
     header : str (optional)
         Name of the output DataFrame. Default is "nan_fracs"
+    percent : bool (default False)
+        Display as percentage instead of fractions
 
     Returns
     -------
@@ -45,6 +47,8 @@ def count_nan_fracs(df_in, header=None):
     if header is None:
         header = "nan_fracs"
     nan_fracs = (df_in.isnull().sum()/len(df_in)).to_frame(header)
+    if percent:
+        nan_fracs = nan_fracs.applymap("{:.2%}".format)
     return nan_fracs
 
 

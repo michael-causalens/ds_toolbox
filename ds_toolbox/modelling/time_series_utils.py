@@ -3,7 +3,7 @@ time_series_utils.py
 
 Helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
- @todo: fix bar width issue in candlesticks with mixed freqs
+ @todo: fix tick_freq binding issue in candlesticks
 """
 
 import numpy as np
