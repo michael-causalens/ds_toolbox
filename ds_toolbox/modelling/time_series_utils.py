@@ -80,15 +80,15 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     """
     _plot_check_input(df)
 
-    if normalized:
-        df = normalize(df)
-    if standardized:
-        df = standardize(df)
-
     if start_date is not None:
         df = df[df.index >= start_date]
     if end_date is not None:
         df = df[df.index <= end_date]
+
+    if normalized:
+        df = normalize(df)
+    if standardized:
+        df = standardize(df)
 
     # only plot ticks if fewer than 100 points shown, otherwise looks cluttered
     if "style" not in kwargs:
@@ -373,6 +373,7 @@ def volatile_periods(data, period=1, threshold=0.1, how=None):
 def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussian", random_state=None):
     """
     Generate a random walk time-series with the specified settings
+    @todo: replace for loop with np.cumsum()
 
     Parameters
     ----------
