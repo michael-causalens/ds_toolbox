@@ -11,9 +11,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pandas.tseries.frequencies import to_offset
-
+from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
 from ..visualisation import plot_colors
+
+register_matplotlib_converters()
 
 
 def _check_input(df):
@@ -197,6 +199,8 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
 
     # pyplot bar width units are always in days, need to convert width to frequency of data
     freq_str = candle_data.index.freqstr
+    if freq_str is None:
+        freq_str = infer_freq(candle_data).resolution_string
 
     # business days have the same width as calendar days
     if freq_str == "B":
