@@ -55,7 +55,7 @@ def count_nan_fracs(df_in, header=None, percent=False):
 def _get_series_signs(data_in):
     """
     Map numeric values to [-1, 1] based on sign. Zeros and nans stay the same.
-    See get_signs() for full documentation.
+    See map_to_signs() for full documentation.
     """
     if data_in.dtype.kind not in 'biufc':
         raise TypeError(f"Expected numeric values but {data_in.name} Series has type {data_in.dtype.name} ")
@@ -164,3 +164,40 @@ def unpack_series(data):
     List of indices and list of values
     """
     return data.index, data.values
+
+
+def explode_dict_column(df_in, column):
+    """
+    Unpack a Dataframe column of dicts into a new column for each key and drop the original column.
+    Like a dict equivalent of pandas.Series.explode()
+
+    @todo: is this faster with pandas.io.json.json_normalize(df['column'])?
+
+    Parameters
+    ----------
+    df_in : pandas DataFrame
+        Input data. Must contain a column with dict values
+    column : str
+        The DataFrame column with dicts to expand
+
+    Returns
+    -------
+    Original DataFrame with dict column expanded
+
+    Example
+    -------
+    >>> df = pd.DataFrame({'a':[1,2,3], 'b':[{'c':1}, {'d':3}, {'c':5, 'd':6}]})
+    >>> explode_dict_columns(df, "b")
+       a    c    d
+    0  1  1.0  NaN
+    1  2  NaN  3.0
+    2  3  5.0  6.0
+    """
+    df = df_in.copy()
+    data = df[column]
+    if not isinstance(data.iloc[0], dict):
+        raise TypeError(f"Column must have type dict, not {type(data.iloc[0])}")
+
+    data = data.apply(pd.Series)
+    df = pd.concat([df.drop(columns=column), data], axis=1)
+    return df
