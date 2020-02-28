@@ -187,7 +187,7 @@ def explode_dict_column(df_in, column):
     Example
     -------
     >>> df = pd.DataFrame({'a':[1,2,3], 'b':[{'c':1}, {'d':3}, {'c':5, 'd':6}]})
-    >>> explode_dict_columns(df, "b")
+    >>> explode_dict_column(df, "b")
        a    c    d
     0  1  1.0  NaN
     1  2  NaN  3.0

@@ -10,6 +10,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+from matplotlib import cm
 from pandas.tseries.frequencies import to_offset
 from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
@@ -74,7 +76,8 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
     **kwargs :
-        Valid arguments are: title (str), tick_freq (int)
+        Valid arguments are: cmap - named color palette(see matplotlib for list),
+                            style(str), color, title (str), tick_freq (int)
         
     Returns
     -------
@@ -101,7 +104,13 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     else:
         linestyle = kwargs["style"]
 
-    if kwargs.get("color"):
+    # specify plot colors
+    if kwargs.get("cmap"):
+        if kwargs.get("color"):
+            raise ValueError("Cannot specify both cmap and color")
+        color = cm.get_cmap(kwargs["cmap"], len(df.columns))
+        color = color(range(len(df.columns)))
+    elif kwargs.get("color"):
         color = kwargs["color"]
     else:
         color = plot_colors[: len(df.columns)]
