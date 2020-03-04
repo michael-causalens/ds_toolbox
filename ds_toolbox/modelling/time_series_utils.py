@@ -75,7 +75,7 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
         standard scale the time series to zero mean, unit variance
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
-    **kwargs :
+    **kwargs
         Valid arguments are: cmap - named color palette(see matplotlib for list),
                             style(str), color, title (str), tick_freq (int)
         
@@ -108,8 +108,8 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     if kwargs.get("cmap"):
         if kwargs.get("color"):
             raise ValueError("Cannot specify both cmap and color")
-        color = cm.get_cmap(kwargs["cmap"], len(df.columns))
-        color = color(range(len(df.columns)))
+        cmap = cm.get_cmap(kwargs["cmap"], len(df.columns))
+        color = cmap(range(len(df.columns)))
     elif kwargs.get("color"):
         color = kwargs["color"]
     else:
@@ -386,7 +386,6 @@ def volatile_periods(data, period=1, threshold=0.1, how=None):
 def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussian", random_state=None):
     """
     Generate a random walk time-series with the specified settings
-    @todo: replace for loop with np.cumsum()
 
     Parameters
     ----------
@@ -414,22 +413,17 @@ def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussia
     if isinstance(start_datetime, str):
         start_datetime = pd.to_datetime(start_datetime)
     if isinstance(step, int) or isinstance(step, float):
-        step_list = np.random.choice([step, -step], size=n_obs)
+        step_list = np.random.choice([step, -step], size=n_obs-1)
     elif isinstance(step, list):
-        step_list = np.random.choice(step, size=n_obs)
+        step_list = np.random.choice(step, size=n_obs-1)
     elif step == "gaussian":
-        step_list = np.random.randn(n_obs)
+        step_list = np.random.randn(n_obs-1)
     else:
         raise TypeError(f"step must be an int, float, list of ints/floats, or \"gaussian\", not a {type(step)} ")
 
     x_range = pd.date_range(start_datetime, periods=n_obs, freq=freq)
+    y_range = np.concatenate(([start_y], step_list), axis=0).cumsum()
 
-    y = start_y
-    y_range = []
-
-    for current_step in step_list:
-        y_range.append(y)
-        y += current_step
     return pd.DataFrame(y_range, index=x_range, columns=["random_walk"])
 
 

@@ -132,7 +132,7 @@ def inverse_diff(y0, returns):
     pandas.Series with levels instead of returns
 
     """
-    levels = np.concatenate((y0, returns), axis=0).cumsum()
+    levels = np.concatenate(([y0], returns), axis=0).cumsum()
     return pd.Series(levels)
 
 
@@ -171,8 +171,6 @@ def explode_dict_column(df_in, column):
     Unpack a Dataframe column of dicts into a new column for each key and drop the original column.
     Like a dict equivalent of pandas.Series.explode()
 
-    @todo: is this faster with pandas.io.json.json_normalize(df['column'])?
-
     Parameters
     ----------
     df_in : pandas DataFrame
@@ -201,3 +199,37 @@ def explode_dict_column(df_in, column):
     data = data.apply(pd.Series)
     df = pd.concat([df.drop(columns=column), data], axis=1)
     return df
+
+
+# def read_csvs(file_list: list, concat_axis=None, verbose=False, **kwargs):
+#     """
+#     Load a list of csv files into a pandas Datafame
+#     @todo: this is still not general enough
+#
+#     Parameters
+#     ----------
+#     file_list : list of strings
+#         Paths to csv files to load
+#     concat_axis : int (optional)
+#         Concatenate the final list of Dataframes: 0 for along the row axis, 1 for along the column axis.
+#     verbose : bool (default=False)
+#         Display iteration step of file loop.
+#     **kwargs
+#         Options for pandas.read_csv()
+#
+#     Returns
+#     -------
+#     Either a list of dataframes if concat_axis not specified or a single dataframe if concat_axis specified.
+#     """
+#     lst_dataframes = []
+#
+#     for i, filename in enumerate(file_list):
+#         if verbose:
+#             print(f"At file {i} of {len(file_list)}")
+#         this_df = pd.read_csv(filename, **kwargs)
+#         lst_dataframes.append(this_df)
+#
+#     if concat_axis is not None:
+#         return pd.concat(lst_dataframes, axis=concat_axis, ignore_index=True)
+#     else:
+#         return lst_dataframes
