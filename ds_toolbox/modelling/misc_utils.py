@@ -201,35 +201,47 @@ def explode_dict_column(df_in, column):
     return df
 
 
-# def read_csvs(file_list: list, concat_axis=None, verbose=False, **kwargs):
-#     """
-#     Load a list of csv files into a pandas Datafame
-#     @todo: this is still not general enough
-#
-#     Parameters
-#     ----------
-#     file_list : list of strings
-#         Paths to csv files to load
-#     concat_axis : int (optional)
-#         Concatenate the final list of Dataframes: 0 for along the row axis, 1 for along the column axis.
-#     verbose : bool (default=False)
-#         Display iteration step of file loop.
-#     **kwargs
-#         Options for pandas.read_csv()
-#
-#     Returns
-#     -------
-#     Either a list of dataframes if concat_axis not specified or a single dataframe if concat_axis specified.
-#     """
-#     lst_dataframes = []
-#
-#     for i, filename in enumerate(file_list):
-#         if verbose:
-#             print(f"At file {i} of {len(file_list)}")
-#         this_df = pd.read_csv(filename, **kwargs)
-#         lst_dataframes.append(this_df)
-#
-#     if concat_axis is not None:
-#         return pd.concat(lst_dataframes, axis=concat_axis, ignore_index=True)
-#     else:
-#         return lst_dataframes
+def read_csvs(file_list: list, rename_columns: list, concat_axis=None, verbose=False, **kwargs):
+    """
+    Load a list of csv files into a pandas Datafame
+    @todo: this is still not general enough
+
+    Parameters
+    ----------
+    file_list : list of strings
+        Paths to csv files to load
+    rename_columns : list of strings
+        If concatenating along columns, use this rename the columns if have the same name in all input files.
+    concat_axis : int (optional)
+        Concatenate the final list of Dataframes: 0 for along the row axis, 1 for along the column axis.
+    verbose : bool (default=False)
+        Display iteration step of file loop.
+    **kwargs
+        Options for pandas.read_csv()
+
+    Returns
+    -------
+    Either a list of dataframes if concat_axis not specified or a single dataframe if concat_axis specified.
+    """
+    lst_dataframes = []
+
+    if concat_axis not in [0, 1, None]:
+        raise ValueError(f"Invalid value {concat_axis} for concat_axis.")
+
+    for i, filename in enumerate(file_list):
+        if verbose:
+            print(f"At file {i} of {len(file_list)}")
+        this_df = pd.read_csv(filename, **kwargs)
+        if this_df.shape[1] > 1:
+            raise ValueError(f"Only a single column from each file supported. Pass usecols argument to specify column.")
+        lst_dataframes.append(this_df)
+
+    if concat_axis == 0:
+        return pd.concat(lst_dataframes, axis=0, ignore_index=True)
+    elif concat_axis == 1:
+        joined_dataframe = pd.concat(lst_dataframes, axis=1, sort=True)
+        if rename_columns is not None:
+            joined_dataframe.columns = rename_columns
+        return joined_dataframe
+    else:
+        return lst_dataframes
