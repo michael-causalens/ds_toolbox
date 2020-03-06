@@ -64,6 +64,7 @@ def normalize(df):
 def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
+    @todo, add alpha, linewidth, marker, s(size)
     
     Parameters
     ----------
@@ -119,7 +120,7 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     df.plot(style=linestyle, ax=ax, color=color, figsize=(15, 6), x_compat=True)
 
     if kwargs.get("title"):
-        ax.title(kwargs["title"])
+        ax.set_title(kwargs["title"])
 
     if kwargs.get("tick_freq"):
         ticks = _get_plot_ticks(df, kwargs["tick_freq"])

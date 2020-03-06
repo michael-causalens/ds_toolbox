@@ -203,7 +203,7 @@ def explode_dict_column(df_in, column):
 
 def read_csvs(file_list: list, rename_columns: list, concat_axis=None, verbose=False, **kwargs):
     """
-    Load a list of csv files into a pandas Datafame
+    Load a list of csv files and concatenate into a pandas Datafame.
     @todo: this is still not general enough
 
     Parameters
@@ -211,7 +211,7 @@ def read_csvs(file_list: list, rename_columns: list, concat_axis=None, verbose=F
     file_list : list of strings
         Paths to csv files to load
     rename_columns : list of strings
-        If concatenating along columns, use this rename the columns if have the same name in all input files.
+        If concatenating along columns, rename the columns if they have the same name in all input files.
     concat_axis : int (optional)
         Concatenate the final list of Dataframes: 0 for along the row axis, 1 for along the column axis.
     verbose : bool (default=False)
