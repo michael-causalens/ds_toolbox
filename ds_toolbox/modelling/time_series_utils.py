@@ -64,8 +64,7 @@ def normalize(df):
 def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
-    @todo, add alpha, linewidth, marker, s(size)
-    
+
     Parameters
     ----------
     df : pandas.DataFrame
@@ -293,10 +292,6 @@ def infer_freq(df_in):
 
     inferred_freq = df_in.index.to_series().diff().iloc[1]
     return inferred_freq
-
-
-def convert_to_wide_fmt():
-    pass
 
 
 def sliding_windows(x, window, stride=1):

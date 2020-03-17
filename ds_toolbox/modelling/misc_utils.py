@@ -201,7 +201,7 @@ def explode_dict_column(df_in, column):
     return df
 
 
-def read_csvs(file_list: list, rename_columns: list, concat_axis=None, verbose=False, **kwargs):
+def read_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
     """
     Load a list of csv files and concatenate into a pandas Datafame.
     @todo: this is still not general enough
