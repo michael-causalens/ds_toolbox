@@ -108,3 +108,45 @@ def plot_r2(y_pred, y_true, **kwargs):
             bbox=props)
 
     plt.grid(b=True, color='grey', linestyle=':', linewidth=0.5)
+
+
+def multiscatter(X, labels, max_plots=None, **kwargs):
+    """
+    Plot 2D scatter data with label information.
+
+    Parameters
+    ----------
+    X : array-like
+        Input data of shape (n_samples, 2)
+    labels : array-like
+        List of labels for data points of shape (n_samples, )
+    max_plots : int, optional
+        Only plot n most frequent labels
+    **kwargs
+        Matplotlib options, e.g. figsize, xlim, ylim, title, xlabel, ylabel
+    """
+
+    if X.shape[1] != 2:
+        raise ValueError("Scatter data must have two dimensions")
+
+    assert X.shape[0] == len(labels), f"Mismatch in length of input data {X.shape[0]} and labels {len(labels)}"
+
+    # sort labels from most frequent to least
+    labels_uniq, counts = np.unique(labels, return_counts=True)
+
+    sorted_idx = np.argsort(-counts)
+    labels_uniq = labels_uniq[sorted_idx]
+
+    plt.figure(figsize=kwargs.get("figsize"))
+    for i, label in enumerate(labels_uniq[:max_plots]):
+        data_mask = (labels == label)
+        plot_data = X[data_mask]
+        plt.scatter(plot_data[:, 0], plot_data[:, 1], color=plot_colors[i], label=label)
+
+    plt.xlim(kwargs.get("xlim"))
+    plt.ylim(kwargs.get("ylim"))
+    plt.xlabel(kwargs.get("xlabel"))
+    plt.ylabel(kwargs.get("ylabel"))
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    plt.title(kwargs.get("title"))
+    plt.show()
