@@ -1,9 +1,9 @@
 """
 time_series_utils.py
 
-Helper functions for time-series data
+> helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
- @todo: fix tick_freq binding issue in candlesticks
+ @todo: fix tick_freq binding issue in candlesticks, 5minute tick freq in plot
 """
 
 import numpy as np
@@ -25,7 +25,10 @@ def _check_input(df):
     Check time-series input DataFrame is correct format
     """
     if not isinstance(df, pd.DataFrame):
-        raise TypeError("Input data must be a DataFrame")
+        try:
+            df = df.to_frame()
+        except AttributeError:
+            print(f"Input data must be a pandas Series or Dataframe not a {type(df)}")
 
     if not isinstance(df.index, pd.DatetimeIndex):
         try:
