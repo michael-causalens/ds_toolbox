@@ -1,9 +1,10 @@
 """
 visualisation.py
 
-Generic plotting functions
+> Generic plotting functions
 
-@todo: more color palettes, scatter, violin,
+@todo: more color palettes, violin,
+@todo: missingness plot time-series
 
 """
 import numpy as np
@@ -151,3 +152,46 @@ def multiscatter(X, labels, max_plots=None, keep_labels=None, **kwargs):
     plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
     plt.title(kwargs.get("title"))
     plt.show()
+
+
+def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, tick_fmt=None, **kwargs):
+    """
+    Plot missing periods in black, filled periods in white for time-series Dataframe.
+
+    @TODO seaborn heatmap is still a bit buggy. Do this with matplotlib barcode instead.
+
+    Parameters
+    ----------
+    data_in : pandas.Dataframe
+        Input time-series data with a pandas.DatetimeIndex index.
+    start_date, end_date : str, optional
+        Set plotting range.
+    tick_freq : int, optional
+        Frequency of x-axis ticks in units of data index.
+    tick_fmt: str, optional
+        Date format of x-axis ticks
+    **kwargs
+        Options for matplotlib
+    """
+    plt.figure(figsize=(15, 6))
+
+    data = data_in.copy()
+    if start_date is not None:
+        data = data[data.index >= start_date]
+    if end_date is not None:
+        data = data[data.index <= end_date]
+    if tick_fmt is not None:
+        data.index = data.index.strftime(tick_fmt)
+
+    if tick_freq is not None:
+        xticks = np.arange(0, len(data) - 1, tick_freq, dtype=np.int)
+        xticklabels = data.index[xticks]
+        sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False, xticklabels=xticklabels)
+        plt.xticks(xticks, rotation=45, ha="right")
+    else:
+        sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False)
+        plt.xticks(rotation=45, ha="right")
+
+    plt.xlabel(kwargs.get("xlabel"))
+    plt.title(kwargs.get("title"))
+
