@@ -80,8 +80,6 @@ def plot_r2(y_pred, y_true, **kwargs):
     ----------
     y_pred, y_true : numpy.array
         predicted and actual values of target
-    target : str (optional)
-        Name of target to display on axes labels. If None, labels are "predicted" and "actual"
     **kwargs
         Options for pyplot.scatter(), such as title
     """
@@ -110,9 +108,10 @@ def plot_r2(y_pred, y_true, **kwargs):
     plt.grid(b=True, color='grey', linestyle=':', linewidth=0.5)
 
 
-def multiscatter(X, labels, max_plots=None, **kwargs):
+def multiscatter(X, labels, max_plots=None, keep_labels=None, **kwargs):
     """
     Plot 2D scatter data with label information.
+    @TODO: Add color, cbar kwarg
 
     Parameters
     ----------
@@ -120,6 +119,8 @@ def multiscatter(X, labels, max_plots=None, **kwargs):
         Input data of shape (n_samples, 2)
     labels : array-like
         List of labels for data points of shape (n_samples, )
+    keep_labels : array-like, optional
+        Only plot this subset of labels.
     max_plots : int, optional
         Only plot n most frequent labels
     **kwargs
@@ -133,14 +134,14 @@ def multiscatter(X, labels, max_plots=None, **kwargs):
 
     # sort labels from most frequent to least
     labels_uniq, counts = np.unique(labels, return_counts=True)
-
-    sorted_idx = np.argsort(-counts)
-    labels_uniq = labels_uniq[sorted_idx]
+    idx_sorted_by_counts = np.argsort(-counts)
+    labels_uniq = labels_uniq[idx_sorted_by_counts]
 
     plt.figure(figsize=kwargs.get("figsize"))
     for i, label in enumerate(labels_uniq[:max_plots]):
-        data_mask = (labels == label)
-        plot_data = X[data_mask]
+        if keep_labels is not None and label not in keep_labels:
+            continue
+        plot_data = X[(labels == label)]
         plt.scatter(plot_data[:, 0], plot_data[:, 1], color=plot_colors[i], label=label)
 
     plt.xlim(kwargs.get("xlim"))
