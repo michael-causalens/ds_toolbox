@@ -1,7 +1,7 @@
 """
 misc_utils.py
 
-Assorted useful helper functions for pandas Dataframes
+> useful helper functions for pandas Dataframes
 """
 import numpy as np
 import pandas as pd

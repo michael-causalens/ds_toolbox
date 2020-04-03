@@ -3,7 +3,8 @@ time_series_utils.py
 
 > helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
- @todo: fix tick_freq binding issue in candlesticks, 5minute tick freq in plot
+ @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths, 5minute tick freq in plot
+ @todo: tick_freq issue in monthly data, see gas model
 """
 
 import numpy as np
@@ -64,7 +65,7 @@ def normalize(df):
     return (df - df.min()) / (df.max() - df.min())
 
 
-def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, **kwargs):
+def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
@@ -78,15 +79,16 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
         standard scale the time series to zero mean, unit variance
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
+    tick_freq : int or str, optional
+        Datetime tick interval frequency. See _interpret_tick_freq() for valid values.
     **kwargs
-        Valid arguments are: cmap - named color palette(see matplotlib for list),
-                            style(str), color, title (str), tick_freq (int)
-        
+        Valid arguments are: cmap - named color palette (see matplotlib for list),
+                            style(str), color, title (str)
+
     Returns
     -------
     a matplotlib.figure.Figure object
     """
-    _plot_check_input(df)
 
     if start_date is not None:
         df = df[df.index >= start_date]
@@ -121,53 +123,15 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     fig, ax = plt.subplots()
     df.plot(style=linestyle, ax=ax, color=color, figsize=(15, 6), x_compat=True)
 
-    if kwargs.get("title"):
-        ax.set_title(kwargs["title"])
-
-    if kwargs.get("tick_freq"):
-        ticks = _get_plot_ticks(df, kwargs["tick_freq"])
+    if tick_freq is not None:
+        ticks = _interpret_tick_freq(df, tick_freq)
         ax.xaxis.set_major_locator(ticks)
 
     ax.xaxis.grid(True, which='major', linestyle=':')
     ax.yaxis.grid(True, which='major', linestyle=':')
 
 
-def _get_plot_ticks(data_df, tick_freq):
-    """
-    Get appropriate ticks for plot based on inferred frequency.
-    Matplotlib/pandas does not do this as well as it should.
-
-    Parameters
-    ----------
-    data_df : pandas.DataFrame
-        Input data
-    tick_freq : int
-        Frequency of tick marks in units of input data resolution
-
-    Returns
-    -------
-    A matplotlib.dates Locator object, e.g HourLocator
-    For use with an axes plot object with ax.xaxis.set_major_locator(ticks)
-    """
-
-    tick_dict = {"T": mdates.MinuteLocator(interval=tick_freq),
-                 "H": mdates.HourLocator(interval=tick_freq),
-                 "D": mdates.DayLocator(interval=tick_freq),
-                 "M": mdates.MonthLocator(interval=tick_freq),
-                 "Y": mdates.YearLocator(tick_freq)}
-
-    inferred_freq_str = infer_freq(data_df).resolution_string
-
-    try:
-        inferred_ticks = tick_dict[inferred_freq_str]
-    except KeyError:
-        print(f"No supported tick frequency for this data. Obtained {inferred_freq_str}.")
-        raise
-
-    return inferred_ticks
-
-
-def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
+def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, **kwargs):
     """
     Candlestick finance plot. Only a single time-series can be provided at a time.
 
@@ -175,11 +139,12 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
     ----------
     data_in : pandas.Dataframe
         Single time-series converted to OHLC format (see DataFrame.resample().ohlc())
-        For a list see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
+    tick_freq : int, optional
+        Tick interval along x-axis.
     **kwargs
-        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel', 'tick_freq'
+        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel'
 
     Returns
     -------
@@ -212,7 +177,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
     # pyplot bar width units are always in days, need to convert width to frequency of data
     freq_str = candle_data.index.freqstr
     if freq_str is None:
-        freq_str = infer_freq(candle_data).resolution_string
+        freq_str = infer_freq(candle_data)
 
     # business days have the same width as calendar days
     if freq_str == "B":
@@ -229,8 +194,8 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, **kwargs):
     plt.bar(down.index, down.high - down.open, 0.2 / divisor, bottom=down.open, color='r')
     plt.bar(down.index, down.low - down.close, 0.2 / divisor, bottom=down.close, color='r')
 
-    if kwargs.get("tick_freq"):
-        plt.xticks(candle_data.index[::kwargs.get("tick_freq")], rotation=45)
+    if tick_freq is not None:
+        plt.xticks(candle_data.index[::tick_freq], rotation=45)
     else:
         plt.xticks(rotation=45)
     plt.title(kwargs.get("title"), fontsize=kwargs.get("fontsize"))
@@ -275,26 +240,6 @@ def get_crosscorr(datax, datay, start_date=None, end_date=None, lag=0):
         datay = datay[datay.index <= end_date]
         
     return datax.corr(datay.shift(lag))
-
-
-def infer_freq(df_in):
-    """
-    Infer the frequency of a time-series from the first two timestamps.
-    Dataframe must have a pandas.DatetimeIndex index or a string index that can be converted to one.
-
-    Parameters
-    ----------
-    df_in : pandas.Dataframe
-
-    Returns
-    -------
-    pandas.Timedelta object, e.g. Timedelta('0 days 00:05:00')
-    Can be converted to a string like "5T" with infer_freq(...).resolution_string
-    """
-    _check_input(df_in)
-
-    inferred_freq = df_in.index.to_series().diff().iloc[1]
-    return inferred_freq
 
 
 def sliding_windows(x, window, stride=1):
@@ -439,6 +384,7 @@ def drop_weekends(df_in):
 def is_stationary(data, **kwargs):
     """
     Simple test of stationarity of a time-series using augmented Dicky-Fuller test implemented in statsmodels
+    @TODO: Add output="short/long" option displaying dict for latter. Add dataframe option
 
     Parameters
     ----------
@@ -453,3 +399,112 @@ def is_stationary(data, **kwargs):
     """
     adf, pval, used_lag, n_obs, dict_crit, icbest = adfuller(data, **kwargs)
     return pval < 0.05, pval
+
+
+def _interpret_tick_freq(df_in, tick_freq):
+    """
+    Handle tick_freq input to plot().
+
+    If an integer is provided, give ticks in equal-spaced intervals
+    of size tick_freq in the same frequency as the input data.
+    If a string is provided, such as "2M", use ticks in that frequency directly.
+
+    If data has weekly frequency and tick_freq = 4, plot every 4 weeks.
+    If tick_freq = "2W", plot ticks every 2 weeks, irrespective of frequency of data.
+
+    See https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases
+
+    Parameters
+    ----------
+    df_in : pandas.Dataframe
+        Input data
+    tick_freq: int or str
+        Frequency of ticks.
+    """
+
+    if isinstance(tick_freq, int):
+        inferred_freq = infer_freq(df_in)
+        ticks = _get_ticks_from_str(freq_str=inferred_freq, interval=tick_freq)
+
+    elif isinstance(tick_freq, str):
+        ticks = _get_ticks_from_str(freq_str=tick_freq)
+    else:
+        raise TypeError(f"tick_freq must be a string or int not a {type(tick_freq)}")
+    return ticks
+
+
+def _get_ticks_from_str(freq_str=None, interval=None):
+    """
+    Infer valid datetime axis ticks for plotting using the provided arguments.
+    There are multiple ways of expressing the same ticks, e.g.
+
+    _get_ticks("W-SUN", interval=2)
+    _get_ticks("2W-SUN")
+
+    """
+
+    # "W-SUN", "Q-FEB" etc.
+    anchor = None
+    if "W-" in freq_str:
+        inferred_freq_str, anchor = freq_str.split("-")
+        print(inferred_freq_str)
+
+    # "6M" etc.
+    elif any(char.isdigit() for char in freq_str):
+        inferred_freq_str = freq_str[-1]
+        interval = int(freq_str[:-1])
+    else:
+        inferred_freq_str = freq_str
+
+    # if interval not provided, assume 1
+    if interval is None:
+        interval = 1
+
+    # use Sunday as start of week if not specified
+    if anchor is None:
+        anchor = "SUN"
+
+    dict_weekdays = {"SUN": mdates.SU,
+                     "MON": mdates.MO,
+                     "TUE": mdates.TU,
+                     "WED": mdates.WE,
+                     "THU": mdates.TH,
+                     "FRI": mdates.FR,
+                     "SAT": mdates.SA}
+
+    tick_dict = {"T": mdates.MinuteLocator(interval=interval),
+                 "H": mdates.HourLocator(interval=interval),
+                 "D": mdates.DayLocator(interval=interval),
+                 "W": mdates.WeekdayLocator(byweekday=dict_weekdays[anchor], interval=interval),
+                 "M": mdates.MonthLocator(interval=interval),
+                 "Y": mdates.YearLocator(interval)}
+
+    try:
+        inferred_ticks = tick_dict[inferred_freq_str]
+    except KeyError:
+        print(f"No supported tick frequency for this data. Obtained {inferred_freq_str}.")
+        raise
+    return inferred_ticks
+
+
+def infer_freq(df_in):
+    """
+    Infer the frequency of a time-series, either using pandas directly or from the first two timestamps.
+    Dataframe must have a pandas.DatetimeIndex index or a string index that can be converted to one.
+
+    Parameters
+    ----------
+    df_in : pandas.Dataframe
+
+    Returns
+    -------
+    A string, e.g. "6M", "5T", "W-SUN"
+    """
+    # first try to get frequency of time-index directly
+    inferred_freq_str = df_in.index.freqstr
+
+    # failing that, infer it manually @todo: this is still buggy
+    if inferred_freq_str is None:
+        inferred_freq_str = df_in.index.to_series().diff().iloc[1].resolution_string
+
+    return inferred_freq_str
