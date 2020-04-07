@@ -479,6 +479,9 @@ def _get_ticks_from_str(freq_str=None, interval=None):
                  "M": mdates.MonthLocator(interval=interval),
                  "Y": mdates.YearLocator(interval)}
 
+    # put business days on weekday ticks
+    if inferred_freq_str == "B":
+        inferred_freq_str = "D"
     try:
         inferred_ticks = tick_dict[inferred_freq_str]
     except KeyError:
