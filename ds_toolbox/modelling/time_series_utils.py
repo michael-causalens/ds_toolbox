@@ -3,8 +3,8 @@ time_series_utils.py
 
 > helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
- @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths, 5minute tick freq in plot
- @todo: tick_freq issue in monthly data, see gas model
+ @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths
+ @todo: down-sampled features, time features
 """
 
 import numpy as np
@@ -89,6 +89,7 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     -------
     a matplotlib.figure.Figure object
     """
+    _plot_check_input(df)
 
     if start_date is not None:
         df = df[df.index >= start_date]
