@@ -84,7 +84,7 @@ def get_regression_metrics(model, X_train, X_test, y_train, y_test):
     return df_metrics
 
 
-def compare_regression_model_predictions(y_preds, y_true, model_names=None):
+def compare_regression_model_predictions(y_preds, y_true, model_names):
     """
     Compare regression metrics across several models to a single test set.
 
