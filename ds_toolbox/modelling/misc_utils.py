@@ -8,7 +8,7 @@ import pandas as pd
 from functools import reduce
 
 
-def count_nans(df_in, header=None):
+def count_nans(df_in, header=None, sort=False):
     """
     Get number of nans in each column
 
@@ -17,6 +17,8 @@ def count_nans(df_in, header=None):
     df_in : pandas DataFrame or Series
     header : str (optional)
         Name of the output DataFrame. Default is "nan_counts"
+    sort : bool, default False
+        Sort columns from fewest nans to most nans.
 
     Returns
     -------
@@ -25,19 +27,23 @@ def count_nans(df_in, header=None):
     if header is None:
         header = "nan_counts"
     nan_counts = df_in.isnull().sum().to_frame(header)
+    if sort:
+        nan_counts = nan_counts.sort_values(by=header)
     return nan_counts
 
 
-def count_nan_fracs(df_in, header=None, percent=False):
+def count_nan_fracs(df_in, header=None, sort=False, percent=False):
     """
     Get fraction of nans in each column
 
     Parameters
     ----------
     df_in : pandas DataFrame or Series
-    header : str (optional)
+    header : str, optional
         Name of the output DataFrame. Default is "nan_fracs"
-    percent : bool (default False)
+    sort : bool, default False
+        Sort columns from fewest nans to most nans.
+    percent : bool, default False
         Display as percentage instead of fractions
 
     Returns
@@ -47,6 +53,8 @@ def count_nan_fracs(df_in, header=None, percent=False):
     if header is None:
         header = "nan_fracs"
     nan_fracs = (df_in.isnull().sum()/len(df_in)).to_frame(header)
+    if sort:
+        nan_fracs = nan_fracs.sort_values(by=header)
     if percent:
         nan_fracs = nan_fracs.applymap("{:.2%}".format)
     return nan_fracs
@@ -204,7 +212,6 @@ def explode_dict_column(df_in, column):
 def read_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
     """
     Load a list of csv files and concatenate into a pandas Datafame.
-    @todo: this is still not general enough
 
     Parameters
     ----------
