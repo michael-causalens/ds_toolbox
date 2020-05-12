@@ -3,9 +3,7 @@ visualisation.py
 
 > Generic plotting functions
 
-@todo: more color palettes, violin,
-@todo: missingness plot time-series
-
+@todo: more color palettes, violin
 """
 import numpy as np
 import seaborn as sns
@@ -73,10 +71,34 @@ def countplot_sns(df_in, col_name, normed=True, **kwargs):
     plt.show()
 
 
+def corrplot(data, method="pearson", **kwargs):
+    """
+    Plot correlations between Dataframe columns in a heatmap.
+
+    Parameters
+    ----------
+    data : pandas.Dataframe
+        Input data. Remember time-series should be stationary
+    method : str or callable
+        See Dataframe.corr() for options
+    **kwargs
+        Plotting options: figsize (tuple of ints), cmap (str)
+
+    """
+    figsize = kwargs.get("figsize", (10, 8))
+    cmap = kwargs.get("cmap", "viridis")
+
+    corrs = data.corr(method=method)
+
+    plt.figure(figsize=figsize)
+    sns.heatmap(corrs, cmap=cmap)
+    plt.xticks(rotation=45, ha="right")
+
+
 def plot_r2(y_pred, y_true, **kwargs):
     """
-    # @todo: does this belong in regression utils instead?
     Scatter plot of y_predicted vs. actuals and associated R^2 score.
+
     Parameters
     ----------
     y_pred, y_true : numpy.array
@@ -194,4 +216,3 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
 
     plt.xlabel(kwargs.get("xlabel"))
     plt.title(kwargs.get("title"))
-
