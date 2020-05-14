@@ -209,6 +209,41 @@ def explode_dict_column(df_in, column):
     return df
 
 
+def smart_log(data_in, base=None):
+    """
+    Extension of numpy.log handling invalid values according to
+    log(x) -> -log(-x) if x < 0
+    log(x) -> 0 if x == 0
+    log(x) -> log(x) otherwise
+
+    Note that this may not be a valid way of dealing with those cases.
+    All this guarantees is the invalid value warnings from numpy are suppressed.
+
+    Parameters
+    ----------
+    data_in : pandas Series
+        Input data.
+    base : int, optional
+        Base of logarithm, default is natural.
+
+    Returns
+    -------
+    pandas.Series
+    """
+    neg = data_in < 0
+    zero = data_in == 0
+    pos = data_in > 0
+
+    data_out = data_in.copy()
+    data_out.loc[neg] = - np.log(-data_in[neg])
+    data_out.loc[pos] = np.log(data_in[pos])
+    data_out.loc[zero] = 0
+
+    if base is not None:
+        data_out = data_out / np.log(base)
+    return data_out
+
+
 def read_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
     """
     Load a list of csv files and concatenate into a pandas Datafame.
