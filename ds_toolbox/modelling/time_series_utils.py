@@ -26,10 +26,7 @@ def _check_input(df):
     Check time-series input DataFrame is correct format
     """
     if not isinstance(df, pd.DataFrame):
-        try:
-            df = df.to_frame()
-        except AttributeError:
-            print(f"Input data must be a pandas Series or Dataframe not a {type(df)}")
+        raise TypeError(f"Input data must be a pandas Dataframe not a {type(df)}")
 
     if not isinstance(df.index, pd.DatetimeIndex):
         try:
