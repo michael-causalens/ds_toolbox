@@ -382,7 +382,7 @@ def drop_weekends(df_in):
 def is_stationary(data, **kwargs):
     """
     Simple test of stationarity of a time-series using augmented Dicky-Fuller test implemented in statsmodels
-    @TODO: Add output="short/long" option displaying dict for latter. Add dataframe option
+    @TODO: Add output="short/long" option displaying dict for latter.
 
     Parameters
     ----------

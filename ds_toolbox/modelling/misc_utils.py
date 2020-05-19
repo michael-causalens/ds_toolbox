@@ -2,6 +2,7 @@
 misc_utils.py
 
 > useful helper functions for pandas Dataframes
+@todo: clean up repeated renamed_values code in map_to_signs()
 """
 import numpy as np
 import pandas as pd
@@ -73,7 +74,7 @@ def _get_series_signs(data_in):
     return data
 
 
-def map_to_signs(df_in):
+def map_to_signs(df_in, renamed_values: list = None):
     """
     Map numeric values to [-1, 1] based on sign. Zeros and nans stay the same.
 
@@ -81,6 +82,8 @@ def map_to_signs(df_in):
     ----------
     df_in : pandas.Series or pandas.Dataframe
         Input data.
+    renamed_values : list, optional
+        Map -1.0 and 1.0 to something more descriptive, e.g. ["down", "up"]
 
     Returns
     -------
@@ -90,15 +93,24 @@ def map_to_signs(df_in):
     ------
     TypeError if any of Dataframe columns are non-numeric.
     """
-    
+
+    if renamed_values is not None:
+        assert len(renamed_values) == 2, f"renamed_values has {len(renamed_values)} elements, expected 2"
+
     if isinstance(df_in, pd.Series):
         df_out = _get_series_signs(df_in)
+        if renamed_values is not None:
+            mapping = {-1.0: renamed_values[0], 1.0: renamed_values[1]}
+            df_out = df_out.map(mapping)
     
     elif isinstance(df_in, pd.DataFrame):
         df_out = df_in.copy()
     
         for column in df_in.columns:
             df_out[column] = _get_series_signs(df_in[column])
+            if renamed_values is not None:
+                mapping = {-1.0: renamed_values[0], 1.0: renamed_values[1]}
+                df_out[column] = df_out[column].map(mapping)
     else:
         raise TypeError(f"Input must be a pandas Series or DataFrame not a {type(df_in)}")
         
