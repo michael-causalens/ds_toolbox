@@ -384,7 +384,7 @@ def yesterday(output_fmt="str"):
     -------
     str in format %Y-%m-%d or pd.datetime object
     """
-    yday = pd.Timestamp.today() - BDay(1)
+    yday = pd.to_datetime('today') - BDay(1)
 
     if output_fmt == "str":
         return yday.strftime("%Y-%m-%d")
