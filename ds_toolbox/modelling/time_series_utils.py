@@ -17,6 +17,8 @@ from pandas.tseries.frequencies import to_offset
 from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
 from ..visualisation import plot_colors
+from pandas.tseries.offsets import BDay
+
 
 register_matplotlib_converters()
 
@@ -367,6 +369,29 @@ def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussia
     y_range = np.concatenate(([start_y], step_list), axis=0).cumsum()
 
     return pd.DataFrame(y_range, index=x_range, columns=["random_walk"])
+
+
+def yesterday(output_fmt="str"):
+    """
+    Last business day before today.
+
+    Parameters
+    ----------
+    output_fmt : str
+        Either "str" or "datetime" for desired output format
+
+    Returns
+    -------
+    str in format %Y-%m-%d or pd.datetime object
+    """
+    yday = pd.Timestamp.today() - BDay(1)
+
+    if output_fmt == "str":
+        return yday.strftime("%Y-%m-%d")
+    elif output_fmt == "datetime":
+        return yday
+    else:
+        raise ValueError("output_fmt must be either \"str\" or \"datetime\"")
 
 
 def drop_weekends(df_in):
