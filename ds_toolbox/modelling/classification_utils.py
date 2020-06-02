@@ -92,7 +92,7 @@ def get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_tes
     -------
     A pandas DataFrame with classification metrics as index and a column each for train and test.
     """
-
+    # @TODO: add balanced accuracy, logloss, Brier score
     train_pred, test_pred = get_model_probs(model, X_train, X_test)
     best_threshold = get_best_threshold(model, metric_fn, X_train, X_test, y_test)
 

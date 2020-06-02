@@ -129,3 +129,17 @@ def construct_ewmzscore_features(data, windows):
 
     results_df = pd.concat(lst_series, axis=1)
     return results_df
+
+
+def construct_time_features():
+    """
+    """
+    # @TODO implement this
+    raise NotImplementedError
+
+
+def construct_panel_features():
+    """
+    """
+    # @TODO implement this
+    raise NotImplementedError
