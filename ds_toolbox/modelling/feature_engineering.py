@@ -3,6 +3,7 @@ feature_engineering.py
 
 > Time-series features like rolling averages, standard-deviations, z-scores
 """
+import numpy as np
 import pandas as pd
 
 
@@ -131,11 +132,24 @@ def construct_ewmzscore_features(data, windows):
     return results_df
 
 
-def construct_time_features():
+def construct_time_features(data_df):
     """
+    Calculate sine of hour of day and day of week as features. Useful if periodicity is suspected.
+
+    Parameters
+    ----------
+    data_df : pandas.Dataframe
+        Must be hourly frequency or higher.
+
+    Returns
+    -------
+    pandas.Dataframe with two columns: sine_hour and sine_day
     """
-    # @TODO implement this
-    raise NotImplementedError
+    sine_hour = pd.Series(np.sin(data_df.index.hour * 2 * np.pi / 24), index=data_df.index, name="sine_hour")
+    sine_day = pd.Series(np.sin(data_df.index.dayofweek * 2 * np.pi / 7), index=data_df.index, name="sine_day")
+
+    all_time_features = pd.concat([sine_hour, sine_day], axis=1)
+    return all_time_features
 
 
 def construct_panel_features():
