@@ -64,7 +64,8 @@ def normalize(df):
     return (df - df.min()) / (df.max() - df.min())
 
 
-def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, **kwargs):
+def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, retplot=False,
+         **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
@@ -80,6 +81,8 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
         Optional. Format "YYYY-MM-DD"
     tick_freq : int or str, optional
         Datetime tick interval frequency. See _interpret_tick_freq() for valid values.
+    retplot : bool
+        return an axis object from the function call as well as plot it
     **kwargs
         Valid arguments are: cmap - named color palette (see matplotlib for list),
                             style(str), color, title (str)
@@ -129,6 +132,8 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
 
     ax.xaxis.grid(True, which='major', linestyle=':')
     ax.yaxis.grid(True, which='major', linestyle=':')
+    if retplot:
+        return ax
 
 
 def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, **kwargs):
