@@ -8,11 +8,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from collections import Counter
 from sklearn.metrics import roc_auc_score, roc_curve, average_precision_score
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
 
-def get_model_probs(model, X_train, X_test):
+def get_model_probs(model, features_train, features_test):
     """
     Get class probabilities for train and test samples from pre-trained model.
 
@@ -21,7 +22,7 @@ def get_model_probs(model, X_train, X_test):
     model : obj
         Pre-trained classification model. Typically a scikit-learn classification
         estimator but can in principle be any object with a `predict_prob()` method.
-    X_train, X_test : array-like
+    features_train, features_test : array-like
         Train and test feature arrays. Can be numpy arrays, dataframes, series or lists.
 
     Returns
@@ -30,12 +31,12 @@ def get_model_probs(model, X_train, X_test):
     containing class probabilities for each sample
     """
 
-    train_pred = model.predict_proba(X_train)
-    test_pred = model.predict_proba(X_test)
+    train_pred = model.predict_proba(features_train)
+    test_pred = model.predict_proba(features_test)
     return train_pred, test_pred
 
 
-def get_best_threshold(model, metric_fn, X_train, X_test, y_test):
+def get_best_threshold(model, metric_fn, features_train, features_test, y_test):
     """
     Get the value of the model's classification probability threshold that maximises the
     specified classification metric over the test set.
@@ -48,7 +49,7 @@ def get_best_threshold(model, metric_fn, X_train, X_test, y_test):
     metric_fn : obj
         classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
         `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
-    X_train, X_test, y_test : array-like
+    features_train, features_test, y_test : array-like
         Train and test data output from `train_test_split()`
 
     Returns
@@ -57,7 +58,7 @@ def get_best_threshold(model, metric_fn, X_train, X_test, y_test):
         Threshold that maximises `metric_fn`
     """
 
-    train_pred, test_pred = get_model_probs(model, X_train, X_test)
+    train_pred, test_pred = get_model_probs(model, features_train, features_test)
 
     metric_max = 0
     best_threshold = 0.5
@@ -73,7 +74,7 @@ def get_best_threshold(model, metric_fn, X_train, X_test, y_test):
     return best_threshold
 
 
-def get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_test):
+def get_classification_metrics(model, metric_fn, features_train, features_test, y_train, y_test):
     """
     Print various classification metrics for a model on training and test data
     at the value of the threshold that optimizes `metric_fn`.
@@ -85,7 +86,7 @@ def get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_tes
     metric_fn : obj
         classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
         `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
-    X_train, X_test, y_train, y_test : array-like
+    features_train, features_test, y_train, y_test : array-like
         Train and test data.
 
     Returns
@@ -93,8 +94,8 @@ def get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_tes
     A pandas DataFrame with classification metrics as index and a column each for train and test.
     """
     # @TODO: add balanced accuracy, logloss, Brier score
-    train_pred, test_pred = get_model_probs(model, X_train, X_test)
-    best_threshold = get_best_threshold(model, metric_fn, X_train, X_test, y_test)
+    train_pred, test_pred = get_model_probs(model, features_train, features_test)
+    best_threshold = get_best_threshold(model, metric_fn, features_train, features_test, y_test)
 
     train_pred_best = (train_pred[:, 1] > best_threshold)
     test_pred_best = (test_pred[:, 1] > best_threshold)
@@ -121,7 +122,7 @@ def get_confusion_matrix():
     pass
 
 
-def compare_model_metrics(models, metric_fn, X_train, X_test, y_train, y_test, model_names: list):
+def compare_model_metrics(models, metric_fn, features_train, features_test, y_train, y_test, model_names: list):
     """
     Compare classification performance metrics across several models.
     Note that because a classifier performance depends on the chosen threshold,
@@ -137,7 +138,7 @@ def compare_model_metrics(models, metric_fn, X_train, X_test, y_train, y_test, m
     metric_fn : obj
         classifiction metric from `sklearn.metrics`. Valid values are `accuracy_score`,
         `f1_score`, `precision_score`, `recall_score`   `roc_auc_score` or `average_precision_score`.
-    X_train, X_test, y_train, y_test : array-like
+    features_train, features_test, y_train, y_test : array-like
         Train and test data.
     model_names : list of strs
         Names of models.
@@ -155,7 +156,7 @@ def compare_model_metrics(models, metric_fn, X_train, X_test, y_train, y_test, m
 
     df_metrics = pd.DataFrame()
     for i, model in enumerate(models):
-        model_metrics = get_classification_metrics(model, metric_fn, X_train, X_test, y_train, y_test)
+        model_metrics = get_classification_metrics(model, metric_fn, features_train, features_test, y_train, y_test)
         model_metrics = model_metrics["Test"]  # compare test set only
 
         model_metrics.name = model_names[i]
@@ -208,7 +209,7 @@ def compare_model_predictions(y_preds: list, y_true, model_names: list):
     return df_metrics
 
 
-def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, density=False, nbins=10):
+def plot_pred_class_distributions(features, y_pred, y_true, feature_names=None, density=False, nbins=10):
     """
     Plot distributions of each feature in X_feat split by predicted classes,
     i.e a row for each feature, a column for each class and on each subplot
@@ -216,7 +217,7 @@ def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, de
 
     Parameters
     ----------
-    X_feat : array-like
+    features : array-like
         Numpy array of features data, of shape (n_samples, n_features)
     y_pred : array-like
         Numpy array of predicted labels
@@ -234,7 +235,7 @@ def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, de
     matplotlib.figure.Figure object with (n_features * n_classes) subplots
     """
 
-    n_features = X_feat.shape[1]
+    n_features = features.shape[1]
     n_classes = len(set(y_pred))
 
     if feature_names is None:
@@ -249,8 +250,8 @@ def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, de
             correct_pred_mask = (y_pred == y_true) & (y_true == col_idx)
             incorrect_pred_mask = (y_pred != y_true) & (y_true == col_idx)
 
-            x_correct = X_feat[correct_pred_mask][:, row_idx]
-            x_incorrect = X_feat[incorrect_pred_mask][:, row_idx]
+            x_correct = features[correct_pred_mask][:, row_idx]
+            x_incorrect = features[incorrect_pred_mask][:, row_idx]
 
             bins_start = min(min(x_correct), min(x_incorrect))
             bins_end = max(max(x_correct), max(x_incorrect))
@@ -271,13 +272,71 @@ def plot_pred_class_distributions(X_feat, y_pred, y_true, feature_names=None, de
     fig.tight_layout()
 
 
-def _get_roc_curve(estimator, X_feat, y_true):
-    scores = estimator.predict_proba(X_feat)[:, 1]
+def plot_features_classes(features, target, ncols=5, nbins=50, density=True, legend=False):
+    """
+    Plot histograms of numerical features separated by class labels.
+
+    Parameters
+    ----------
+
+    features : array-like
+        Features array of shape (n_samples, n_features)
+    target : array-like
+        Binary classes array of shape (n_samples, )
+    ncols : int, default 5
+        Number of plots per row
+    nbins : int, default 50
+        Number of equal-sized bins in distributions.
+    density : bool, default True
+        If False, plot counts instead of probability density
+    legend : bool, default False
+        Legend on each plot
+
+    Returns
+    -------
+    n_feat subplots each with two histograms, arranged into ncols columns
+    """
+
+    if features.shape[0] != target.shape[0]:
+        raise ValueError("Features and target must have same number of rows")
+
+    classes = list(Counter(target))
+    if len(classes) != 2:
+        raise ValueError(f"Only 2 classes supported, {len(classes)} given")
+
+    n_feat = features.shape[1]
+    nrows = int(np.ceil(n_feat / ncols))
+
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(ncols * 3, nrows * 3), )
+    axs = axs.flatten()
+
+    for i, ax in enumerate(axs):
+        x_class0 = features[target == classes[0]][:, i]
+        x_class1 = features[target == classes[1]][:, i]
+
+        bins_start = min(min(x_class0), min(x_class1))
+        bins_end = max(max(x_class0), max(x_class1))
+        bins = np.linspace(bins_start, bins_end, nbins + 1)
+
+        ax.hist(x_class0, bins=bins, density=density, label=0, color="forestgreen", alpha=0.6)
+        ax.hist(x_class1, bins=bins, density=density, label=1, color="red", alpha=0.4)
+        ax.set_xlabel(f"X_{str(i)}")
+
+        ax.set_ylabel("Probability density")
+        if legend:
+            ax.legend()
+
+    fig.suptitle("Distribution of labels", y=1.01)
+    fig.tight_layout()
+
+
+def _get_roc_curve(estimator, features, y_true):
+    scores = estimator.predict_proba(features)[:, 1]
     fpr, tpr, thresh = roc_curve(y_true, scores)
     return fpr, tpr, thresh
 
 
-def plot_rocs(estimators, X_feat, y_true, model_names=None):
+def plot_rocs(estimators, features, y_true, model_names=None):
     """
     Plot ROC curves for classification models.
 
@@ -285,7 +344,7 @@ def plot_rocs(estimators, X_feat, y_true, model_names=None):
     ----------
     estimators : array-like
         List of fitted models, must have a `predict_proba()` method to get ROC curve
-    X_feat : array-like
+    features : array-like
         Numpy array of features data, of shape (n_samples, n_features)
     y_true : array-like
         Numpy array of true labels
@@ -303,7 +362,7 @@ def plot_rocs(estimators, X_feat, y_true, model_names=None):
         model_names = [f"model {i + 1}" for i in range(len(estimators))]
 
     for i, estimator in enumerate(estimators):
-        fpr, tpr, thresh = _get_roc_curve(estimator, X_feat, y_true)
+        fpr, tpr, thresh = _get_roc_curve(estimator, features, y_true)
         plt.plot(fpr, tpr, label=model_names[i])
 
     plt.xlabel("false positive rate")
