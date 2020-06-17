@@ -311,8 +311,16 @@ def plot_features_classes(features, target, ncols=5, nbins=50, density=True, leg
     axs = axs.flatten()
 
     for i, ax in enumerate(axs):
-        x_class0 = features[target == classes[0]][:, i]
-        x_class1 = features[target == classes[1]][:, i]
+        if i >= X.shape[1]:
+            ax.set_visible(False)
+            continue
+
+        x = features[:, i]
+        notnan_mask = ~np.isnan(x)
+        x_notna = x[notnan_mask]
+        target_notna = target[notnan_mask]
+        x_class0 = x_notna[target_notna == classes[0]]
+        x_class1 = x_notna[target_notna == classes[1]]
 
         bins_start = min(min(x_class0), min(x_class1))
         bins_end = max(max(x_class0), max(x_class1))
