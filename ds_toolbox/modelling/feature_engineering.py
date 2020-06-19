@@ -152,6 +152,41 @@ def construct_time_features(data_df):
     return all_time_features
 
 
+def construct_lagged_features(data: pd.Series, lags: list):
+    """
+    Lag input feature. Output columns have names like "input_col_5_step_lag" etc.
+
+    Parameters
+    ----------
+    data : pandas.Series
+        Input data. Must be a time-series with a "name" attribute
+    lags : list of ints
+
+    Returns
+    -------
+    pandas.Dataframe
+
+    """
+    lst_series = []
+
+    if data.name is None:
+        raise ValueError("Series object must have a 'name' attribute")
+
+    for lag in lags:
+        if not isinstance(lag, int) or lag == 0:
+            raise ValueError(f"Invalid lag {lag}. Must be nonzero integer")
+
+        shifted = data.shift(lag)
+        if lag < 0:
+            shifted.name = data.name + "_" + str(lag) + "_step_lag"
+        else:
+            shifted.name = data.name + "_" + str(lag) + "_step_fwd_lag"
+            lst_series.append(shifted)
+
+    results_df = pd.concat(lst_series, axis=1)
+    return results_df
+
+
 def construct_panel_features():
     """
     """
