@@ -275,6 +275,7 @@ def plot_pred_class_distributions(features, y_pred, y_true, feature_names=None, 
 def plot_features_classes(features, target, ncols=5, nbins=50, density=True, legend=False):
     """
     Plot histograms of numerical features separated by class labels.
+    @TODO: Add more control over binning.
 
     Parameters
     ----------
@@ -311,7 +312,7 @@ def plot_features_classes(features, target, ncols=5, nbins=50, density=True, leg
     axs = axs.flatten()
 
     for i, ax in enumerate(axs):
-        if i >= X.shape[1]:
+        if i >= features.shape[1]:
             ax.set_visible(False)
             continue
 
