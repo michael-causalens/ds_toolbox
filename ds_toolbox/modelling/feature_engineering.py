@@ -10,8 +10,7 @@ import pandas as pd
 def construct_rolling_features(data, windows):
     """
     Get rolling mean, std-dev, max over various windows
-    Output columns have names like "input_col_5_day_mean" etc.
-    @TODO: "day" is hard-coded into column names, make resolution a parameter
+    Output columns have names like "input_col_5_step_mean" etc.
 
     Parameters
     ----------
@@ -36,7 +35,7 @@ def construct_rolling_features(data, windows):
         rolling = data.rolling(window=window)
         for feature in features:
             result = getattr(rolling, feature)()
-            result.name = data.name + "_" + str(window) + "_day_" + feature
+            result.name = data.name + "_" + str(window) + "_step_" + feature
             lst_series.append(result)
 
     results_df = pd.concat(lst_series, axis=1)
@@ -46,8 +45,7 @@ def construct_rolling_features(data, windows):
 def construct_ewm_features(data, windows):
     """
     Get exponential weighted moving mean and std-dev over various windows
-    Output columns have names like "input_col_5_day_ewm_mean" etc.
-    @TODO: "day" is hard-coded into column names, make resolution a parameter
+    Output columns have names like "input_col_5_step_ewm_mean" etc.
 
     Parameters
     ----------
@@ -72,7 +70,7 @@ def construct_ewm_features(data, windows):
         ewm = data.ewm(span=window)
         for feature in features:
             result = getattr(ewm, feature)()
-            result.name = data.name + "_" + str(window) + "_day_ewm" + feature
+            result.name = data.name + "_" + str(window) + "_step_ewm" + feature
             lst_series.append(result)
 
     results_df = pd.concat(lst_series, axis=1)
@@ -103,8 +101,7 @@ def ewmzscore(x, window):
 def construct_ewmzscore_features(data, windows):
     """
     Get exponential weighted moving z-score over various windows
-    Output columns have names like "input_col_5_day_zscore" etc.
-    @TODO: "day" is hard-coded into column names, make resolution a parameter
+    Output columns have names like "input_col_5_step_zscore" etc.
 
     Parameters
     ----------
@@ -125,7 +122,7 @@ def construct_ewmzscore_features(data, windows):
 
     for window in windows:
         result = ewmzscore(data, window)
-        result.name = data.name + "_" + str(window) + "_day_ewmzscore"
+        result.name = data.name + "_" + str(window) + "_step_ewmzscore"
         lst_series.append(result)
 
     results_df = pd.concat(lst_series, axis=1)
