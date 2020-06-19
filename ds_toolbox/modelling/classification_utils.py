@@ -272,10 +272,9 @@ def plot_pred_class_distributions(features, y_pred, y_true, feature_names=None, 
     fig.tight_layout()
 
 
-def plot_features_classes(features, target, ncols=5, nbins=50, density=True, legend=False):
+def plot_features_classes(features, target, ncols=5, nbins=50, density=True, legend=False, xrange=None):
     """
     Plot histograms of numerical features separated by class labels.
-    @TODO: Add more control over binning.
 
     Parameters
     ----------
@@ -292,6 +291,8 @@ def plot_features_classes(features, target, ncols=5, nbins=50, density=True, leg
         If False, plot counts instead of probability density
     legend : bool, default False
         Legend on each plot
+    xrange : tuple, optional
+        Start and end of bin ranges. By default uses the endpoints of the data.
 
     Returns
     -------
@@ -323,8 +324,11 @@ def plot_features_classes(features, target, ncols=5, nbins=50, density=True, leg
         x_class0 = x_notna[target_notna == classes[0]]
         x_class1 = x_notna[target_notna == classes[1]]
 
-        bins_start = min(min(x_class0), min(x_class1))
-        bins_end = max(max(x_class0), max(x_class1))
+        if xrange is None:
+            bins_start = min(min(x_class0), min(x_class1))
+            bins_end = max(max(x_class0), max(x_class1))
+        else:
+            bins_start, bins_end = xrange
         bins = np.linspace(bins_start, bins_end, nbins + 1)
 
         ax.hist(x_class0, bins=bins, density=density, label=0, color="forestgreen", alpha=0.6)
