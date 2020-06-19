@@ -177,9 +177,9 @@ def construct_lagged_features(data: pd.Series, lags: list):
             raise ValueError(f"Invalid lag {lag}. Must be nonzero integer")
 
         shifted = data.shift(lag)
-        if lag < 0:
+        if lag > 0:
             shifted.name = data.name + "_" + str(lag) + "_step_lag"
-        else:
+        elif lag < 0:
             shifted.name = data.name + "_" + str(lag) + "_step_fwd_lag"
             lst_series.append(shifted)
 
