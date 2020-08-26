@@ -137,7 +137,7 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
         return ax
 
 
-def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None):
+def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None, **kwargs):
     """
     Plot two time-series with different scales using two y-axes.
     Alternative to ts.plot(normalize=True) for special case of two time-series.
@@ -150,6 +150,8 @@ def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None):
         Input time-series. Requires a pandas.DatetimeIndex index.
     start_date, end_date : str, optional
         Format "YYYY-MM-DD"
+    **kwargs
+
     """
 
     if start_date is not None:
@@ -159,12 +161,17 @@ def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None):
         ts1 = ts1[ts1.index <= end_date]
         ts2 = ts2[ts2.index <= end_date]
 
+    if "style" not in kwargs:
+        linestyle = "-"  # "-o"
+    else:
+        linestyle = kwargs["style"]
+
     fig, ax1 = plt.subplots()
-    ts1.plot(style="-o", ax=ax1, color='red', figsize=(15, 6), x_compat=True)
+    ts1.plot(style=linestyle, ax=ax1, color='red', figsize=(15, 6), x_compat=True)
     ax1.tick_params(axis='y', labelcolor='red')
 
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    ts2.plot(style="-o", ax=ax2, color='dodgerblue', figsize=(15, 6), x_compat=True, label=ts2.name)
+    ts2.plot(style=linestyle, ax=ax2, color='dodgerblue', figsize=(15, 6), x_compat=True, label=ts2.name)
     ax2.tick_params(axis='y', labelcolor='dodgerblue')
     fig.legend(loc="upper left", bbox_to_anchor=(0, 1), bbox_transform=ax1.transAxes)
 
