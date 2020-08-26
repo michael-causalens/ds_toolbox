@@ -5,6 +5,7 @@ time_series_utils.py
  @todo: add line to check input checking all rows are numeric (no sum at end)
  @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths
  @todo: down-sampled features, time features
+ @todo: add twiny option for two y-axes plot
 """
 
 import numpy as np
@@ -134,6 +135,41 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     ax.yaxis.grid(True, which='major', linestyle=':')
     if retplot:
         return ax
+
+
+def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None):
+    """
+    Plot two time-series with different scales using two y-axes.
+    Alternative to ts.plot(normalize=True) for special case of two time-series.
+
+    @TODO: add labels, colors, style, legend_loc parameters, DataFrame options
+
+    Parameters
+    ----------
+    ts1, ts2 : pandas.Series
+        Input time-series. Requires a pandas.DatetimeIndex index.
+    start_date, end_date : str, optional
+        Format "YYYY-MM-DD"
+    """
+
+    if start_date is not None:
+        ts1 = ts1[ts1.index >= start_date]
+        ts2 = ts2[ts2.index >= start_date]
+    if end_date is not None:
+        ts1 = ts1[ts1.index <= end_date]
+        ts2 = ts2[ts2.index <= end_date]
+
+    fig, ax1 = plt.subplots()
+    ts1.plot(style="-o", ax=ax1, color='red', figsize=(15, 6), x_compat=True)
+    ax1.tick_params(axis='y', labelcolor='red')
+
+    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    ts2.plot(style="-o", ax=ax2, color='dodgerblue', figsize=(15, 6), x_compat=True, label=ts2.name)
+    ax2.tick_params(axis='y', labelcolor='dodgerblue')
+    fig.legend(loc="upper left", bbox_to_anchor=(0, 1), bbox_transform=ax1.transAxes)
+
+    ax1.xaxis.grid(True, which='major', linestyle=':')
+    ax1.yaxis.grid(True, which='major', linestyle=':')
 
 
 def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, **kwargs):
