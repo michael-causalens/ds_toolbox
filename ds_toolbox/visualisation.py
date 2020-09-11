@@ -8,7 +8,12 @@ visualisation.py
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+
 from sklearn.metrics import r2_score
+from bokeh.models import ColumnDataSource
+from bokeh.plotting import figure
+from bokeh.models import HoverTool
+
 
 plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
                "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
@@ -216,3 +221,34 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
 
     plt.xlabel(kwargs.get("xlabel"))
     plt.title(kwargs.get("title"))
+
+
+def bokeh_chart(timeseries_df):
+    """
+    Plot time-series in an interactive Bokeh chart
+
+    Parameters
+    ----------
+    timeseries_df : pandas.DataFrame
+        Must have a pandas.DatetimeIndex index otherwise it will not plot
+
+    Returns
+    -------
+    A bokeh Figure object, use show(fig) to display it. Remember to run output_notebook() to display in jupyter.
+    """
+    source = ColumnDataSource(timeseries_df)
+
+    p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
+    for i, col in enumerate(timeseries_df.columns):
+        p.line(x='Date', y=col, source=source, line_width=2, color=plot_colors[i],
+               legend_label=col, muted_color=plot_colors[i], muted_alpha=0.2)
+        p.circle(x='Date', y=col, legend_label=col, source=source,
+                 color=plot_colors[i], muted_color=plot_colors[i], muted_alpha=0)
+
+    p.legend.click_policy = "mute"
+    p.xaxis.axis_label = 'Datetime'
+
+    hover = HoverTool(tooltips=[("Date", "$x{%F}"), ("Value", "$y")], formatters={"$x": "datetime"})
+    p.add_tools(hover)
+
+    return p
