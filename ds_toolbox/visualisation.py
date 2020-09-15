@@ -223,26 +223,43 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
     plt.title(kwargs.get("title"))
 
 
-def bokeh_chart(timeseries_df):
+def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None):
     """
     Plot time-series in an interactive Bokeh chart
+    @TODO: Add various plotting options, random select colours, legend location, plot style
 
     Parameters
     ----------
     timeseries_df : pandas.DataFrame
         Must have a pandas.DatetimeIndex index otherwise it will not plot
+    normalized : bool, default False
+        Scale all time-series between 0 and 1.
+    legend_labels: list of strs, optional
+        Custom plot legend entries, default is column headers
 
     Returns
     -------
     A bokeh Figure object, use show(fig) to display it. Remember to run output_notebook() to display in jupyter.
     """
+    if normalized:
+        timeseries_df = (timeseries_df - timeseries_df.min()) / (timeseries_df.max() - timeseries_df.min())
     source = ColumnDataSource(timeseries_df)
 
     p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
+
+    if legend_labels is not None and len(legend_labels) != len(timeseries_df.columns):
+        raise ValueError(f"Length mismatch: {len(legend_labels)} labels for {len(timeseries_df.columns)} columns")
+
     for i, col in enumerate(timeseries_df.columns):
+
+        if legend_labels is None:
+            label = col
+        else:
+            label = legend_labels[i]
+
         p.line(x='Date', y=col, source=source, line_width=2, color=plot_colors[i],
-               legend_label=col, muted_color=plot_colors[i], muted_alpha=0.2)
-        p.circle(x='Date', y=col, legend_label=col, source=source,
+               legend_label=label, muted_color=plot_colors[i], muted_alpha=0.2)
+        p.circle(x='Date', y=col, legend_label=label, source=source,
                  color=plot_colors[i], muted_color=plot_colors[i], muted_alpha=0)
 
     p.legend.click_policy = "mute"
