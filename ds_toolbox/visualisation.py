@@ -13,6 +13,7 @@ from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 from bokeh.models import HoverTool
+from bokeh.palettes import all_palettes
 
 plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
                "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
@@ -222,7 +223,7 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
     plt.title(kwargs.get("title"))
 
 
-def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, linestyle="line"):
+def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, linestyle="line", palette=None):
     """
     Plot time-series in an interactive Bokeh chart
     @TODO: Add various plotting options, random select colours, legend location, plot style
@@ -237,6 +238,8 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
         Custom plot legend entries, default is column headers
     linestyle : str, default "line"
         Either "line", "linescatter" or "scatter"
+    palette : str, optional
+        Use a custom colour palette. See https://docs.bokeh.org/en/latest/docs/reference/palettes.html
 
     Returns
     -------
@@ -252,6 +255,15 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
     shuffled_colors = plot_colors.copy()
     np.random.shuffle(shuffled_colors)
 
+    if palette is not None:
+        if palette not in all_palettes:
+            raise ValueError(f"Invalid palette {palette}. See bokeh docs for a list")
+        if len(timeseries_df.columns) not in range(3, 12):
+            raise ValueError(f"Can only use named palettes if number of plots between 3 and 11.")  # @TODO: improve this
+        used_colors = all_palettes[palette][len(timeseries_df.columns)]
+    else:
+        used_colors = shuffled_colors
+
     p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
 
     if legend_labels is not None and len(legend_labels) != len(timeseries_df.columns):
@@ -264,7 +276,7 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
         else:
             label = legend_labels[i]
 
-        color = shuffled_colors[i]
+        color = used_colors[i]
         if "line" in linestyle:
             p.line(x='Date', y=col, source=source, line_width=2, color=color,
                    legend_label=label, muted_color=color, muted_alpha=0.2)
