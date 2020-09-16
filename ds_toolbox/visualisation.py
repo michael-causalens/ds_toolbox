@@ -14,7 +14,6 @@ from bokeh.models import ColumnDataSource
 from bokeh.plotting import figure
 from bokeh.models import HoverTool
 
-
 plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
                "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
                "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse"]
@@ -48,8 +47,8 @@ def barplot(df_in, col_name=None, normed=False, **kwargs):
     plt.ylabel(kwargs.get("ylabel"))
     plt.title(kwargs.get("title"))
     plt.show()
-    
-    
+
+
 def countplot_sns(df_in, col_name, normed=True, **kwargs):
     """
     Seaborn countplot of value counts for a categorical column
@@ -223,7 +222,7 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
     plt.title(kwargs.get("title"))
 
 
-def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None):
+def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, linestyle="line"):
     """
     Plot time-series in an interactive Bokeh chart
     @TODO: Add various plotting options, random select colours, legend location, plot style
@@ -236,14 +235,22 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None):
         Scale all time-series between 0 and 1.
     legend_labels: list of strs, optional
         Custom plot legend entries, default is column headers
+    linestyle : str, default "line"
+        Either "line", "linescatter" or "scatter"
 
     Returns
     -------
     A bokeh Figure object, use show(fig) to display it. Remember to run output_notebook() to display in jupyter.
     """
+    valid_linestyles = ["line", "linescatter", "scatter"]
+    if linestyle not in valid_linestyles:
+        raise ValueError(f"linestyle {linestyle} not valid. Must be one of {valid_linestyles}")
+
     if normalized:
         timeseries_df = (timeseries_df - timeseries_df.min()) / (timeseries_df.max() - timeseries_df.min())
     source = ColumnDataSource(timeseries_df)
+    shuffled_colors = plot_colors.copy()
+    np.random.shuffle(shuffled_colors)
 
     p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
 
@@ -257,10 +264,13 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None):
         else:
             label = legend_labels[i]
 
-        p.line(x='Date', y=col, source=source, line_width=2, color=plot_colors[i],
-               legend_label=label, muted_color=plot_colors[i], muted_alpha=0.2)
-        p.circle(x='Date', y=col, legend_label=label, source=source,
-                 color=plot_colors[i], muted_color=plot_colors[i], muted_alpha=0)
+        color = shuffled_colors[i]
+        if "line" in linestyle:
+            p.line(x='Date', y=col, source=source, line_width=2, color=color,
+                   legend_label=label, muted_color=color, muted_alpha=0.2)
+        if "scatter" in linestyle:
+            p.circle(x='Date', y=col, legend_label=label, source=source,
+                     color=color, muted_color=color, muted_alpha=0)
 
     p.legend.click_policy = "mute"
     p.xaxis.axis_label = 'Datetime'
