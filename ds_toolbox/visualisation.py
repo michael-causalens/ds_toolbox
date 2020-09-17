@@ -1,11 +1,11 @@
 """
 visualisation.py
 
-> Generic plotting functions
+> Plotting functions with matplotlib and bokeh. The aim is to make this more interactive.
 
-@todo: more color palettes, violin
 """
 import numpy as np
+import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -226,7 +226,8 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
 def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, linestyle="line", palette=None):
     """
     Plot time-series in an interactive Bokeh chart
-    @TODO: Add various plotting options, random select colours, legend location, plot style
+    @TODO: Add various plotting options, legend location, tick_freq
+    @TODO: Move all this into visualisation.bokeh?
 
     Parameters
     ----------
@@ -286,6 +287,50 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
 
     p.legend.click_policy = "mute"
     p.xaxis.axis_label = 'Datetime'
+
+    hover = HoverTool(tooltips=[("Date", "$x{%F}"), ("Value", "$y")], formatters={"$x": "datetime"})
+    p.add_tools(hover)
+
+    return p
+
+
+def bokeh_candlestick(timeseries_df, **kwargs):
+    """
+    Interactive candlestick chart with Bokeh.
+    Expects a dataframe with exactly 4 columns: ["open", "high", "low", "close"] (case-insensitive)
+
+    Parameters
+    ----------
+    timeseries_df : pandas.DataFrame
+        Must have a pandas.DatetimeIndex index otherwise it will not plot
+    **kwargs
+        Only 'title' so far.
+
+    Returns
+    -------
+    A bokeh Figure object, use show(fig) to display it. Remember to run output_notebook() to display in jupyter.
+    """
+
+    df = timeseries_df.copy()
+    df.columns = df.columns.str.lower()
+    expected_columns = ["open", "high", "low", "close"]
+
+    if df.columns.tolist() != expected_columns:
+        raise ValueError(f"Expected exactly 4 columns: {expected_columns}")
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise TypeError("Index must be a DatetimeIndex")
+
+    inc = df.close > df.open
+    dec = df.open > df.close
+    w = 18 * 60 * 60 * 1000  # bar thickness: use 3/4 day in ms
+
+    p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, title=kwargs.get("title"),
+               outline_line_color="black")
+    #     p.xaxis.major_label_orientation = pi/4
+
+    p.segment(df.index, df.high, df.index, df.low, color="black")
+    p.vbar(df.index[inc], w, df.open[inc], df.close[inc], fill_color="forestgreen", line_color="black")
+    p.vbar(df.index[dec], w, df.open[dec], df.close[dec], fill_color="red", line_color="black")
 
     hover = HoverTool(tooltips=[("Date", "$x{%F}"), ("Value", "$y")], formatters={"$x": "datetime"})
     p.add_tools(hover)
