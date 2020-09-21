@@ -2,6 +2,7 @@
 visualisation.py
 
 > Plotting functions with matplotlib and bokeh. The aim is to make this more interactive.
+@todo: fix bug where hover tooltip shows multiple date index values at same x
 
 """
 import numpy as np
@@ -223,7 +224,8 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
     plt.title(kwargs.get("title"))
 
 
-def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, linestyle="line", palette=None):
+def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
+                linestyle="line", palette=None, colors=None):
     """
     Plot time-series in an interactive Bokeh chart
     @TODO: Add various plotting options, legend location, tick_freq
@@ -241,6 +243,8 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
         Either "line", "linescatter" or "scatter"
     palette : str, optional
         Use a custom colour palette. See https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+    colors : list of strs, optional
+        Explicitly pass a list of colors. Otherwise random colors or a named palette are used
 
     Returns
     -------
@@ -253,22 +257,29 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None, lin
     if normalized:
         timeseries_df = (timeseries_df - timeseries_df.min()) / (timeseries_df.max() - timeseries_df.min())
     source = ColumnDataSource(timeseries_df)
-    shuffled_colors = plot_colors.copy()
-    np.random.shuffle(shuffled_colors)
 
+    num_series = len(timeseries_df.columns)
+
+    # set plot color options: either named palette, user list of colors, or randomly chosen
     if palette is not None:
+        if colors is not None:
+            raise ValueError("Using both 'palette' and 'colors' is incompatible. Choose one or the other.")
         if palette not in all_palettes:
             raise ValueError(f"Invalid palette {palette}. See bokeh docs for a list")
-        if len(timeseries_df.columns) not in range(3, 12):
+        if num_series not in range(3, 12):
             raise ValueError(f"Can only use named palettes if number of plots between 3 and 11.")  # @TODO: improve this
-        used_colors = all_palettes[palette][len(timeseries_df.columns)]
+        used_colors = all_palettes[palette][num_series]
+    elif colors is not None:
+        used_colors = colors
     else:
+        shuffled_colors = plot_colors.copy()
+        np.random.shuffle(shuffled_colors)
         used_colors = shuffled_colors
 
     p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
 
-    if legend_labels is not None and len(legend_labels) != len(timeseries_df.columns):
-        raise ValueError(f"Length mismatch: {len(legend_labels)} labels for {len(timeseries_df.columns)} columns")
+    if legend_labels is not None and len(legend_labels) != num_series:
+        raise ValueError(f"Length mismatch: {len(legend_labels)} labels for {num_series} columns")
 
     for i, col in enumerate(timeseries_df.columns):
 
