@@ -129,14 +129,16 @@ def construct_ewmzscore_features(data, windows):
     return results_df
 
 
-def construct_time_features(data_df):
+def construct_time_features(data_df, method="sine"):
     """
-    Calculate sine of hour of day and day of week as features. Useful if periodicity is suspected.
+    Calculate sine or cosine of hour of day and day of week as features. Useful if periodicity is suspected.
 
     Parameters
     ----------
     data_df : pandas.Dataframe
         Must be hourly frequency or higher.
+    method: str, default "sine"
+        "sine" or "cosine"
 
     Returns
     -------
@@ -144,8 +146,16 @@ def construct_time_features(data_df):
     """
     sine_hour = pd.Series(np.sin(data_df.index.hour * 2 * np.pi / 24), index=data_df.index, name="sine_hour")
     sine_day = pd.Series(np.sin(data_df.index.dayofweek * 2 * np.pi / 7), index=data_df.index, name="sine_day")
+    cos_hour = pd.Series(np.cos(data_df.index.hour * 2 * np.pi / 24), index=data_df.index, name="cosine_hour")
+    cos_day = pd.Series(np.cos(data_df.index.dayofweek * 2 * np.pi / 7), index=data_df.index, name="cosine_day")
 
-    all_time_features = pd.concat([sine_hour, sine_day], axis=1)
+    if method == "sine":
+        all_time_features = pd.concat([sine_hour, sine_day], axis=1)
+    elif method == "cosine":
+        all_time_features = pd.concat([cos_hour, cos_day], axis=1)
+    else:
+        raise ValueError(f"Invalid method {method}. Use either 'sine' or 'cosine'. ")
+
     return all_time_features
 
 
