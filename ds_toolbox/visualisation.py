@@ -254,6 +254,10 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
     if linestyle not in valid_linestyles:
         raise ValueError(f"linestyle {linestyle} not valid. Must be one of {valid_linestyles}")
 
+    if timeseries_df.index.name is None:
+        raise ValueError("timeseries index must have a name")
+    xlabel = timeseries_df.index.name
+
     if normalized:
         timeseries_df = (timeseries_df - timeseries_df.min()) / (timeseries_df.max() - timeseries_df.min())
     source = ColumnDataSource(timeseries_df)
@@ -290,10 +294,10 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
 
         color = used_colors[i]
         if "line" in linestyle:
-            p.line(x='Date', y=col, source=source, line_width=2, color=color,
+            p.line(x=xlabel, y=col, source=source, line_width=2, color=color,
                    legend_label=label, muted_color=color, muted_alpha=0.2)
         if "scatter" in linestyle:
-            p.circle(x='Date', y=col, legend_label=label, source=source,
+            p.circle(x=xlabel, y=col, legend_label=label, source=source,
                      color=color, muted_color=color, muted_alpha=0)
 
     p.legend.click_policy = "mute"
