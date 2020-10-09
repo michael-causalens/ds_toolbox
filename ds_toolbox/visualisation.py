@@ -306,7 +306,7 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
     hover = HoverTool(tooltips=[("Date", "$x{%F}"), ("Value", "$y")], formatters={"$x": "datetime"})
     p.add_tools(hover)
 
-    return ps
+    return p
 
 
 def bokeh_candlestick(timeseries_df, **kwargs):
