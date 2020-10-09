@@ -306,7 +306,7 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
     hover = HoverTool(tooltips=[("Date", "$x{%F}"), ("Value", "$y")], formatters={"$x": "datetime"})
     p.add_tools(hover)
 
-    return p
+    return ps
 
 
 def bokeh_candlestick(timeseries_df, **kwargs):
@@ -328,9 +328,9 @@ def bokeh_candlestick(timeseries_df, **kwargs):
 
     df = timeseries_df.copy()
     df.columns = df.columns.str.lower()
-    expected_columns = ["open", "high", "low", "close"]
+    expected_columns = ["close", "high", "low", "open"]
 
-    if df.columns.tolist() != expected_columns:
+    if sorted(df.columns.tolist()) != expected_columns:
         raise ValueError(f"Expected exactly 4 columns: {expected_columns}")
     if not isinstance(df.index, pd.DatetimeIndex):
         raise TypeError("Index must be a DatetimeIndex")
