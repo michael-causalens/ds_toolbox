@@ -65,14 +65,14 @@ def normalize(df):
     return (df - df.min()) / (df.max() - df.min())
 
 
-def plot(df, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, retplot=False,
-         **kwargs):
+def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, retplot=False,
+         labels: list = None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
     Parameters
     ----------
-    df : pandas.DataFrame
+    df_in : pandas.DataFrame
         Can also plot a subset of columns with df[column_names_list]
     normalized : bool
         min-max scale the time-series to between [0, 1]
@@ -84,6 +84,8 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
         Datetime tick interval frequency. See _interpret_tick_freq() for valid values.
     retplot : bool
         return an axis object from the function call as well as plot it
+    labels : list of strs, optional
+        Use these labels instead of column names
     **kwargs
         Valid arguments are: cmap - named color palette (see matplotlib for list),
                             style(str), color, title (str)
@@ -92,12 +94,16 @@ def plot(df, normalized=False, standardized=False, start_date=None, end_date=Non
     -------
     a matplotlib.figure.Figure object
     """
+    df = df_in.copy()
     _plot_check_input(df)
 
     if start_date is not None:
         df = df[df.index >= start_date]
     if end_date is not None:
         df = df[df.index <= end_date]
+    if labels is not None:
+        assert len(labels) == len(df.columns), f"Mismatch: {len(labels)} labels provided but {len(df.columns)} provided."
+        df.columns = labels
 
     if normalized:
         df = normalize(df)
