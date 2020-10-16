@@ -347,6 +347,7 @@ def get_volatility(df, start_date=None, end_date=None):
     return np.std(np.log(df / df.shift(1)))
 
 
+# noinspection PyTypeChecker
 def volatile_periods(data, period=1, threshold=0.1, how=None):
     """
     Get indices of time-series where fractional change in value over period was larger than threshold
@@ -381,7 +382,8 @@ def volatile_periods(data, period=1, threshold=0.1, how=None):
     return idx
 
 
-def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussian", random_state=None):
+def generate_random_walk(start_datetime="2001-01-01", start_y=0,
+                         n_obs=1000, freq="D", step="gaussian", random_state=None):
     """
     Generate a random walk time-series with the specified settings
 
@@ -410,6 +412,7 @@ def generate_random_walk(start_datetime, start_y, n_obs, freq="D", step="gaussia
 
     if isinstance(start_datetime, str):
         start_datetime = pd.to_datetime(start_datetime)
+
     if isinstance(step, int) or isinstance(step, float):
         step_list = np.random.choice([step, -step], size=n_obs-1)
     elif isinstance(step, list):
