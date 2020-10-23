@@ -225,7 +225,7 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
 
 
 def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
-                linestyle="line", palette=None, colors=None):
+                linestyle="line", palette=None, colors=None, title=None):
     """
     Plot time-series in an interactive Bokeh chart
     @TODO: Add various plotting options, legend location, tick_freq
@@ -245,6 +245,8 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
         Use a custom colour palette. See https://docs.bokeh.org/en/latest/docs/reference/palettes.html
     colors : list of strs, optional
         Explicitly pass a list of colors. Otherwise random colors or a named palette are used
+    title : str, optional
+        Plot title
 
     Returns
     -------
@@ -280,7 +282,7 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
         np.random.shuffle(shuffled_colors)
         used_colors = shuffled_colors
 
-    p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black')
+    p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, outline_line_color='black', title=title)
 
     if legend_labels is not None and len(legend_labels) != num_series:
         raise ValueError(f"Length mismatch: {len(legend_labels)} labels for {num_series} columns")
