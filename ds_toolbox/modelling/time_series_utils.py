@@ -4,8 +4,6 @@ time_series_utils.py
 > helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
  @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths
- @todo: down-sampled features, time features
- @todo: add twiny option for two y-axes plot
 """
 
 import numpy as np
@@ -19,12 +17,13 @@ from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
 from ..visualisation import plot_colors
 from pandas.tseries.offsets import BDay
+from typing import Union
 
 
 register_matplotlib_converters()
 
 
-def _check_input(df):
+def _check_input(df: pd.DataFrame):
     """
     Check time-series input DataFrame is correct format
     """
@@ -88,7 +87,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         Use these labels instead of column names
     **kwargs
         Valid arguments are: cmap - named color palette (see matplotlib for list),
-                            style(str), color, title (str)
+                            style(str), color
 
     Returns
     -------
@@ -102,7 +101,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     if end_date is not None:
         df = df[df.index <= end_date]
     if labels is not None:
-        assert len(labels) == len(df.columns), f"Mismatch: {len(labels)} labels provided but {len(df.columns)} provided."
+        assert len(labels) == len(df.columns), f"Mismatch: {len(labels)} labels provided with {len(df.columns)}."
         df.columns = labels
 
     if normalized:
@@ -131,7 +130,9 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         color = plot_colors[: len(df.columns)]
 
     fig, ax = plt.subplots()
-    df.plot(style=linestyle, ax=ax, color=color, figsize=(15, 6), x_compat=True)
+    figsize = kwargs.get("figsize", (15, 6))
+    linewidth = kwargs.get("linewidth", 2)
+    df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
 
     if tick_freq is not None:
         ticks = _interpret_tick_freq(df, tick_freq)
@@ -347,7 +348,6 @@ def get_volatility(df, start_date=None, end_date=None):
     return np.std(np.log(df / df.shift(1)))
 
 
-# noinspection PyTypeChecker
 def volatile_periods(data, period=1, threshold=0.1, how=None):
     """
     Get indices of time-series where fractional change in value over period was larger than threshold
@@ -368,7 +368,8 @@ def volatile_periods(data, period=1, threshold=0.1, how=None):
     -------
     pandas.index of same dtype as original series index
     """
-    mask = data.pct_change(periods=period).abs() > threshold
+
+    mask: Union[pd.Series, pd.DataFrame] = data.pct_change(periods=period).abs() > threshold
 
     if isinstance(data, pd.DataFrame):
         if how is None:
