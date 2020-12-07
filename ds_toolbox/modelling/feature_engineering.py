@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 
-def construct_rolling_features(data, windows):
+def construct_rolling_features(data, windows, features=None):
     """
     Get rolling mean, std-dev, max over various windows
     Output columns have names like "input_col_5_step_mean" etc.
@@ -18,6 +18,8 @@ def construct_rolling_features(data, windows):
         Input data. Must be a time-series with a "name" attribute
     windows : list of ints
         Which windows to calculate over.
+    features : list of strs, optional
+        Rolling features to calculate e.g. mean, std, max
 
     Returns
     -------
@@ -29,7 +31,8 @@ def construct_rolling_features(data, windows):
     if data.name is None:
         raise ValueError("Series object must have a 'name' attribute")
 
-    features = ["mean", "std", "max"]
+    if features is None:
+        features = ["mean", "std", "max"]
 
     for window in windows:
         rolling = data.rolling(window=window)
@@ -42,7 +45,7 @@ def construct_rolling_features(data, windows):
     return results_df
 
 
-def construct_ewm_features(data, windows, features=["mean", "std"]):
+def construct_ewm_features(data, windows, features=None):
     """
     Get exponential weighted moving mean and std-dev over various windows
     Output columns have names like "input_col_5_step_ewm_mean" etc.
@@ -65,6 +68,9 @@ def construct_ewm_features(data, windows, features=["mean", "std"]):
 
     if data.name is None:
         raise ValueError("Series object must have a 'name' attribute")
+
+    if features is None:
+        features = ["mean", "std"]
 
     for window in windows:
         ewm = data.ewm(span=window)
