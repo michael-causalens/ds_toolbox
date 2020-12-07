@@ -42,7 +42,7 @@ def construct_rolling_features(data, windows):
     return results_df
 
 
-def construct_ewm_features(data, windows):
+def construct_ewm_features(data, windows, features=["mean", "std"]):
     """
     Get exponential weighted moving mean and std-dev over various windows
     Output columns have names like "input_col_5_step_ewm_mean" etc.
@@ -53,6 +53,8 @@ def construct_ewm_features(data, windows):
         Input data. Must be a time-series with a "name" attribute
     windows : list of ints
         Which windows to calculate over.
+    features : list of strs, optional
+        Which EWM features to calculate
 
     Returns
     -------
@@ -63,8 +65,6 @@ def construct_ewm_features(data, windows):
 
     if data.name is None:
         raise ValueError("Series object must have a 'name' attribute")
-
-    features = ["mean", "std"]
 
     for window in windows:
         ewm = data.ewm(span=window)
