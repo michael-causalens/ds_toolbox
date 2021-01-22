@@ -256,7 +256,7 @@ def smart_log(data_in, base=None):
     return data_out
 
 
-def read_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
+def read_and_stack_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
     """
     Load a list of csv files and concatenate into a pandas Datafame.
 
@@ -286,8 +286,9 @@ def read_csvs(file_list: list, rename_columns: list = None, concat_axis=None, ve
         if verbose:
             print(f"At file {i} of {len(file_list)}")
         this_df = pd.read_csv(filename, **kwargs)
-        if this_df.shape[1] > 1:
-            raise ValueError(f"Only a single column from each file supported. Pass usecols argument to specify column.")
+        if this_df.shape[1] > 1 and concat_axis == 1:
+            # @TODO can we remove this error?
+            raise ValueError("Currently can only stack a single column from each file. Pass usecols argument.")
         lst_dataframes.append(this_df)
 
     if concat_axis == 0:
