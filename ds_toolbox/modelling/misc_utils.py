@@ -186,7 +186,7 @@ def unpack_series(data):
     return data.index, data.values
 
 
-def explode_dict_column(df_in, column):
+def explode_dict_column(df_in, column, column_suffix=None):
     """
     Unpack a Dataframe column of dicts into a new column for each key and drop the original column.
     Like a dict equivalent of pandas.Series.explode()
@@ -197,6 +197,8 @@ def explode_dict_column(df_in, column):
         Input data. Must contain a column with dict values
     column : str
         The DataFrame column with dicts to expand
+    column_suffix : str, optional
+        Append "_<column_suffix>" to the end of output columns. Useful if applying this function on multiple columns.
 
     Returns
     -------
@@ -217,6 +219,8 @@ def explode_dict_column(df_in, column):
         raise TypeError(f"Column must have type dict, not {type(data.iloc[0])}")
 
     data = data.apply(pd.Series)
+    if column_suffix is not None:
+        data.columns = [c + "_" + column_suffix for c in data.columns]
     df = pd.concat([df.drop(columns=column), data], axis=1)
     return df
 
