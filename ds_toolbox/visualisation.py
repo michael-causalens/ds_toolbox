@@ -3,6 +3,7 @@ visualisation.py
 
 > Plotting functions with matplotlib and bokeh. The aim is to make this more interactive.
 @todo: fix bug where hover tooltip shows multiple date index values at same x
+@todo: fix tick fmt in ts.plot()
 
 """
 import numpy as np
@@ -339,7 +340,10 @@ def bokeh_candlestick(timeseries_df, **kwargs):
 
     inc = df.close > df.open
     dec = df.open > df.close
-    w = 18 * 60 * 60 * 1000  # bar thickness: use 3/4 day in ms
+
+    # bokeh datetime axes are in ms units so bar widths need to be in ms
+    resolution_seconds = abs((df.index[1] - df.index[0]).total_seconds())
+    w = 0.75 * resolution_seconds * 1000  # x0.75 to keep a small gap between bars
 
     p = figure(x_axis_type="datetime", plot_width=950, plot_height=400, title=kwargs.get("title"),
                outline_line_color="black")
