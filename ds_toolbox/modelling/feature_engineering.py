@@ -2,12 +2,13 @@
 feature_engineering.py
 
 > Time-series features like rolling averages, standard-deviations, z-scores
+@TODO: Add Kalman filter features
 """
 import numpy as np
 import pandas as pd
 
 
-def construct_rolling_features(data, windows, features=None):
+def construct_rolling_features(data, windows, features=None, **kwargs):
     """
     Get rolling mean, std-dev, max over various windows
     Output columns have names like "input_col_5_step_mean" etc.
@@ -20,6 +21,8 @@ def construct_rolling_features(data, windows, features=None):
         Which windows to calculate over.
     features : list of strs, optional
         Rolling features to calculate e.g. mean, std, max
+    **kwargs
+        Extra args for pandas.Series.rolling()
 
     Returns
     -------
@@ -35,7 +38,7 @@ def construct_rolling_features(data, windows, features=None):
         features = ["mean", "std", "max"]
 
     for window in windows:
-        rolling = data.rolling(window=window)
+        rolling = data.rolling(window=window, **kwargs)
         for feature in features:
             result = getattr(rolling, feature)()
             result.name = data.name + "_" + str(window) + "_step_" + feature
@@ -45,7 +48,7 @@ def construct_rolling_features(data, windows, features=None):
     return results_df
 
 
-def construct_ewm_features(data, windows, features=None):
+def construct_ewm_features(data, windows, features=None, **kwargs):
     """
     Get exponential weighted moving mean and std-dev over various windows
     Output columns have names like "input_col_5_step_ewm_mean" etc.
@@ -58,6 +61,8 @@ def construct_ewm_features(data, windows, features=None):
         Which windows to calculate over.
     features : list of strs, optional
         Which EWM features to calculate
+    **kwargs
+        Extra args for pandas.Series.ewm()
 
     Returns
     -------
@@ -73,17 +78,17 @@ def construct_ewm_features(data, windows, features=None):
         features = ["mean", "std"]
 
     for window in windows:
-        ewm = data.ewm(span=window)
+        ewm = data.ewm(span=window, **kwargs)
         for feature in features:
             result = getattr(ewm, feature)()
-            result.name = data.name + "_" + str(window) + "_step_ewm" + feature
+            result.name = data.name + "_" + str(window) + "_step_ewm_" + feature
             lst_series.append(result)
 
     results_df = pd.concat(lst_series, axis=1)
     return results_df
 
 
-def ewmzscore(x, window):
+def ewmzscore(x, window, **kwargs):
     """
     Compute exponentially weighted moving z-score
 
@@ -93,18 +98,20 @@ def ewmzscore(x, window):
         Input data
     window : int
         Span parameter for EWM.
+    **kwargs
+        Extra args for pandas.Series.ewm()
 
     Returns
     -------
     pandas.Series
     """
-    r = x.ewm(span=window)
+    r = x.ewm(span=window, **kwargs)
     mu = r.mean()
     sigma = r.std()
     return (x - mu) / sigma
 
 
-def construct_ewmzscore_features(data, windows):
+def construct_ewmzscore_features(data, windows, **kwargs):
     """
     Get exponential weighted moving z-score over various windows
     Output columns have names like "input_col_5_step_zscore" etc.
@@ -115,6 +122,8 @@ def construct_ewmzscore_features(data, windows):
         Input data. Must be a time-series with a "name" attribute
     windows : list of ints
         Which windows to calculate over.
+    **kwargs
+        Extra args for pandas.Series.ewm()
 
     Returns
     -------
@@ -127,7 +136,7 @@ def construct_ewmzscore_features(data, windows):
         raise ValueError("Input Series must have a 'name' attribute")
 
     for window in windows:
-        result = ewmzscore(data, window)
+        result = ewmzscore(data, window, **kwargs)
         result.name = data.name + "_" + str(window) + "_step_ewmzscore"
         lst_series.append(result)
 
