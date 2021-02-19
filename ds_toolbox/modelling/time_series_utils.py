@@ -4,6 +4,7 @@ time_series_utils.py
 > helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
  @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths
+ @todo: allow "Jan-21" tick format in plot function
 """
 
 import numpy as np
@@ -64,8 +65,8 @@ def normalize(df):
     return (df - df.min()) / (df.max() - df.min())
 
 
-def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, retplot=False,
-         labels: list = None, **kwargs):
+def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, tick_fmt=None,
+         retplot=False, labels: list = None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
@@ -78,20 +79,29 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     standardized : bool
         standard scale the time series to zero mean, unit variance
     start_date, end_date : str
-        Optional. Format "YYYY-MM-DD"
+        Optional. Format "%Y-%m-%d"
     tick_freq : int or str, optional
-        Datetime tick interval frequency. See _interpret_tick_freq() for valid values.
+        Datetime x-axis tick interval.
+        Either a string such as "2Y" for every 2 years, or an int "n" for every n points in the data resolution.
+        See _interpret_tick_freq() for full documentation.
+    tick_fmt : str, optional
+        String format of x-axis ticks. Defaults to %Y-%m-%d but can be any valid strftime specifier.
+        See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
     retplot : bool
         return an axis object from the function call as well as plot it
     labels : list of strs, optional
         Use these labels instead of column names
     **kwargs
-        Valid arguments are: cmap - named color palette (see matplotlib for list),
-                            style(str), color
+        Other plotting options for matplotlib
+        Valid arguments are: cmap - named color palette e.g. viridis (see matplotlib for list),
+                             style - e.g. "-o" for line and dot
+                             color - any valid color or list of colors (must be same length as number of columns)
+                             figsize - tuple, defaults to (15, 6)
+                             linewidth - int, defaults to 2
 
     Returns
     -------
-    a matplotlib.figure.Figure object
+    a matplotlib.figure.Figure object if retplot is True
     """
     df = df_in.copy()
     _plot_check_input(df)
@@ -133,6 +143,9 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     figsize = kwargs.get("figsize", (15, 6))
     linewidth = kwargs.get("linewidth", 2)
     df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
+
+    if tick_fmt is not None:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(tick_fmt))
 
     if tick_freq is not None:
         ticks = _interpret_tick_freq(df, tick_freq)
@@ -387,6 +400,7 @@ def generate_random_walk(start_datetime="2001-01-01", start_y=0,
                          n_obs=1000, freq="D", step="gaussian", random_state=None):
     """
     Generate a random walk time-series with the specified settings
+    @TODO: Add drift term, drift_up=in range [0,1], how to implement for Gaussian: shift mean up by drift_up - 0.5
 
     Parameters
     ----------
