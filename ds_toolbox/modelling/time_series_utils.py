@@ -4,7 +4,6 @@ time_series_utils.py
 > helper functions for time-series data
  @todo: add line to check input checking all rows are numeric (no sum at end)
  @todo: fix tick_freq binding issue in candlesticks, 5 minute candlestick widths
- @todo: allow "Jan-21" tick format in plot function
 """
 
 import numpy as np
@@ -199,7 +198,7 @@ def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None, **kwargs):
     ax1.yaxis.grid(True, which='major', linestyle=':')
 
 
-def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, **kwargs):
+def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, tick_fmt=None, retplot=False, **kwargs):
     """
     Candlestick finance plot. Only a single time-series can be provided at a time.
 
@@ -209,10 +208,17 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, *
         Single time-series converted to OHLC format (see DataFrame.resample().ohlc())
     start_date, end_date : str
         Optional. Format "YYYY-MM-DD"
-    tick_freq : int, optional
-        Tick interval along x-axis.
+    tick_freq : int or str, optional
+        Datetime x-axis tick interval.
+        Either a string such as "2Y" for every 2 years, or an int "n" for every n points in the data resolution.
+        See _interpret_tick_freq() for full documentation.
+    tick_fmt : str, optional
+        String format of x-axis ticks. Defaults to %Y-%m-%d but can be any valid strftime specifier.
+        See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+    retplot : bool
+        return an axis object from the function call as well as plot it
     **kwargs
-        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel'
+        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel', 'figsize'
 
     Returns
     -------
@@ -240,7 +246,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, *
     up = candle_data[candle_data.close > candle_data.open]
     down = candle_data[candle_data.close < candle_data.open]
 
-    plt.figure(figsize=(15, 6))
+    fig, ax = plt.subplots(figsize=(15, 6), dpi=120)
 
     # pyplot bar width units are always in days, need to convert width to frequency of data
     freq_str = candle_data.index.freqstr
@@ -253,24 +259,31 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, *
     divisor = pd.Timedelta(1, "D") / pd.to_timedelta(to_offset(freq_str))
 
     # positive returns in green
-    plt.bar(up.index, up.close - up.open, 1 / divisor, bottom=up.open, color='g')
-    plt.bar(up.index, up.high - up.close, 0.2 / divisor, bottom=up.close, color='g')
-    plt.bar(up.index, up.low - up.open, 0.2 / divisor, bottom=up.open, color='g')
+    plt.bar(up.index, up.close - up.open, width=1 / divisor, bottom=up.open, color='g')
+    plt.bar(up.index, up.high - up.close, width=0.2 / divisor, bottom=up.close, color='g')
+    plt.bar(up.index, up.low - up.open, width=0.2 / divisor, bottom=up.open, color='g')
 
     # negative returns in red
-    plt.bar(down.index, down.close - down.open, 1 / divisor, bottom=down.open, color='r')
-    plt.bar(down.index, down.high - down.open, 0.2 / divisor, bottom=down.open, color='r')
-    plt.bar(down.index, down.low - down.close, 0.2 / divisor, bottom=down.close, color='r')
+    plt.bar(down.index, down.close - down.open, width=1 / divisor, bottom=down.open, color='r')
+    plt.bar(down.index, down.high - down.open, width=0.2 / divisor, bottom=down.open, color='r')
+    plt.bar(down.index, down.low - down.close, width=0.2 / divisor, bottom=down.close, color='r')
 
     if tick_freq is not None:
-        plt.xticks(candle_data.index[::tick_freq], rotation=45)
-    else:
-        plt.xticks(rotation=45)
-    plt.title(kwargs.get("title"), fontsize=kwargs.get("fontsize"))
+        ticks = _interpret_tick_freq(candle_data, tick_freq)
+        ax.xaxis.set_major_locator(ticks)
+    plt.xticks(rotation=45)
 
-    plt.xlabel(kwargs.get("xlabel"), fontsize=kwargs.get("fontsize"))
-    plt.ylabel(kwargs.get("ylabel"), fontsize=kwargs.get("fontsize"))
+    if tick_fmt is not None:
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(tick_fmt))
+
+    ax.set_title(kwargs.get("title"), fontsize=kwargs.get("fontsize"))
+    ax.set_xlabel(kwargs.get("xlabel"), fontsize=kwargs.get("fontsize"))
+    ax.set_ylabel(kwargs.get("ylabel"), fontsize=kwargs.get("fontsize"))
+
     plt.grid(linestyle=":")
+
+    if retplot:
+        return ax
 
 
 def get_crosscorr(datax, datay, start_date=None, end_date=None, lag=0):
