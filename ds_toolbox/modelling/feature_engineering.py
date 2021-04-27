@@ -203,7 +203,7 @@ def construct_lagged_features(data: pd.Series, lags: list):
             shifted.name = data.name + "_" + str(lag) + "_step_lag"
         elif lag < 0:
             shifted.name = data.name + "_" + str(lag) + "_step_fwd_lag"
-            lst_series.append(shifted)
+        lst_series.append(shifted)
 
     results_df = pd.concat(lst_series, axis=1)
     return results_df
