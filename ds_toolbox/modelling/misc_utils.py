@@ -3,10 +3,15 @@ misc_utils.py
 
 > useful helper functions for pandas Dataframes
 @todo: clean up repeated renamed_values code in map_to_signs()
+@todo: rename this as pandas_utils
+@todo: read_and_stack_csvs should accept relative paths as well
+@todo: typing hints for all functions
 """
 import numpy as np
 import pandas as pd
 from functools import reduce
+
+from typing import List, Optional
 
 
 def count_nans(df_in, header=None, sort=False):
@@ -206,8 +211,8 @@ def explode_dict_column(df_in, column, column_suffix=None):
 
     Example
     -------
-    >>> df = pd.DataFrame({'a':[1,2,3], 'b':[{'c':1}, {'d':3}, {'c':5, 'd':6}]})
-    >>> explode_dict_column(df, "b")
+    >>> d = pd.DataFrame({'a':[1,2,3], 'b':[{'c':1}, {'d':3}, {'c':5, 'd':6}]})
+    >>> explode_dict_column(d, "b")
        a    c    d
     0  1  1.0  NaN
     1  2  NaN  3.0
@@ -258,6 +263,58 @@ def smart_log(data_in, base=None):
     if base is not None:
         data_out = data_out / np.log(base)
     return data_out
+
+
+def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
+                row_index_name: Optional[str] = "index", col_index_name: Optional[str] = "experiment"):
+    """
+    Join together several DataFrames along the column axis into a MultiIndex.
+    Designed for when each DataFrame is a results table and you want multiple results tables together.
+    Basically DataFrame.pivot_table() except it actually does what I want.
+
+
+    Parameters
+    ----------
+    lst_dfs_in : list of DataFrames
+       All the input DataFrames must have exactly the same index and columns.
+    df_names: list of str
+        Names for each sub-table that will be the column headers in the output DataFrame
+    row_index_name: str, optional
+        Default is "index"
+    col_index_name: str, optional
+        Default is "experiment". @TODO: Better default name?
+
+    Returns
+    -------
+    pandas.DataFrame with a MultiIndex column axis.
+
+    """
+
+    lst_dfs = []
+    for df in lst_dfs_in:
+        lst_dfs.append(df.copy())
+
+    assert len(lst_dfs) > 1, "Need more than one DataFrame to join"
+    assert len(lst_dfs) == len(df_names), f"Must have same number of DataFrames as DataFrame names"
+    assert all([(x.index == lst_dfs[0].index).all() for x in lst_dfs[1:]]), \
+        f"All DataFrames must have identical indices"
+    assert all([(x.columns == lst_dfs[0].columns).all() for x in lst_dfs[1:]]), \
+        f"All DataFrames must have identical columns"
+
+    for i in range(len(lst_dfs)):
+        lst_dfs[i][col_index_name] = df_names[i]
+
+    long_df = pd.concat(lst_dfs)
+    long_df.index.name = row_index_name
+
+    orig_row_ordering = long_df.index.unique()
+    orig_col_ordering = long_df[col_index_name].unique()
+
+    wide_df = long_df.pivot_table(index=row_index_name, columns=col_index_name)
+    wide_df = wide_df.swaplevel(axis=1).sort_index(1)
+    wide_df = wide_df[orig_col_ordering]
+    wide_df = wide_df.loc[orig_row_ordering]
+    return wide_df
 
 
 def read_and_stack_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
