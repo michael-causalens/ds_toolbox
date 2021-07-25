@@ -6,10 +6,14 @@ visualisation.py
 @todo: fix tick fmt in ts.plot()
 
 """
+import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
+
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+from matplotlib.figure import Figure
 
 from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
@@ -357,3 +361,65 @@ def bokeh_candlestick(timeseries_df, **kwargs):
     p.add_tools(hover)
 
     return p
+
+
+def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
+    """
+    Modify the fonts on a pre-drawn matplotlib Figure to a custom font stored in the ~/Library/Fonts folder.
+    Note, matplotlib figures cannot be copied, so pickle the original if you want to save it before updating.
+
+    Parameters
+    ----------
+    mpl_plot : Figure, AxesSubplot or list of AxesSubplots
+        The figure to customise.
+    font_name : str
+        The name of the ttf file in the ~/Library/Fonts, i.e. <font_name>.ttf
+    font_size: int
+        Making this a required argument as different fonts scale in size differently.
+    font_folder: str, optional
+        Folder containing the font ttf file. Defaults to ~/Library/Fonts as on a Mac.
+
+    Returns
+    -------
+    matplotlib.figure.Figure object
+    """
+    if isinstance(mpl_plot, Figure):
+        axes = mpl_plot.axes
+    elif isinstance(mpl_plot, plt.Axes):
+        axes = [mpl_plot]
+    elif isinstance(mpl_plot, list) and all(isinstance(ax, plt.Axes) for ax in mpl_plot):
+        axes = mpl_plot
+    else:
+        raise TypeError(f"Expected a Figure, pyplot.Axes or a list of pyplot.Axes, not a {type(mpl_plot)}.")
+
+    if font_folder is None:
+        font_file_path = f"~/Library/Fonts/{font_name}.ttf"
+    else:
+        font_file_path = os.path.join(font_folder, f"{font_name}.ttf")
+    prop = fm.FontProperties(fname=font_file_path, size=font_size)
+
+    # modify all the subplot texts
+    for ax in axes:
+
+        ax.set_title(ax.get_title(), fontproperties=prop)
+        # ax.legend(prop=prop)
+
+        ax.set_xlabel(ax.get_xlabel(), fontproperties=prop)
+        ax.set_ylabel(ax.get_ylabel(), fontproperties=prop)
+        for label in ax.get_xticklabels():
+            label.set_fontproperties(prop)
+        for label in ax.get_yticklabels():
+            label.set_fontproperties(prop)
+
+        if ax.get_legend() is not None:
+            ax.legend(prop=prop)
+
+    # finally, if fig.suptitle() was used, update it. Annoyingly it is a protected attribute so triggers a warning.
+    if hasattr(mpl_plot, "_suptitle"):
+        if mpl_plot._suptitle is not None:
+            st = mpl_plot._suptitle
+            x, y = st.get_position()
+            text = st.get_text()
+            mpl_plot.suptitle(x=x, y=y, t=text, fontproperties=prop)
+
+    return mpl_plot
