@@ -14,6 +14,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
+# from matplotlib.
 
 from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
@@ -393,17 +394,19 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
         raise TypeError(f"Expected a Figure, pyplot.Axes or a list of pyplot.Axes, not a {type(mpl_plot)}.")
 
     if font_folder is None:
-        font_file_path = f"~/Library/Fonts/{font_name}.ttf"
+        font_file_path = f"{os.environ['HOME']}/Library/Fonts/{font_name}.ttf"  # default Mac locations
     else:
         font_file_path = os.path.join(font_folder, f"{font_name}.ttf")
     prop = fm.FontProperties(fname=font_file_path, size=font_size)
+
+    # unicode minus signs are not rendered in certain fonts, use hyphen instead
+    # https://stackoverflow.com/questions/58361594/
+    plt.rcParams['axes.unicode_minus'] = False
 
     # modify all the subplot texts
     for ax in axes:
 
         ax.set_title(ax.get_title(), fontproperties=prop)
-        # ax.legend(prop=prop)
-
         ax.set_xlabel(ax.get_xlabel(), fontproperties=prop)
         ax.set_ylabel(ax.get_ylabel(), fontproperties=prop)
         for label in ax.get_xticklabels():
