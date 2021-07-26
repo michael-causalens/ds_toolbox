@@ -96,6 +96,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
                              style - e.g. "-o" for line and dot
                              color - any valid color or list of colors (must be same length as number of columns)
                              figsize - tuple, defaults to (15, 6)
+                             dpi - int, figure resolution, defaults to 72
                              linewidth - int, defaults to 2
 
     Returns
@@ -138,7 +139,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     else:
         color = plot_colors[: len(df.columns)]
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(dpi=kwargs.get("dpi"))
     figsize = kwargs.get("figsize", (15, 6))
     linewidth = kwargs.get("linewidth", 2)
     df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
@@ -153,7 +154,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     ax.xaxis.grid(True, which='major', linestyle=':')
     ax.yaxis.grid(True, which='major', linestyle=':')
     if retplot:
-        return ax
+        return fig
 
 
 def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None, **kwargs):
@@ -218,7 +219,8 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, t
     retplot : bool
         return an axis object from the function call as well as plot it
     **kwargs
-        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel', 'figsize'
+        Options for matplotlib. Implemented 'title', 'xlabel', 'ylabel', 'figsize', 'dpi'.
+        See time_series_utils.plot() documentation.
 
     Returns
     -------
@@ -246,7 +248,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, t
     up = candle_data[candle_data.close > candle_data.open]
     down = candle_data[candle_data.close < candle_data.open]
 
-    fig, ax = plt.subplots(figsize=(15, 6), dpi=120)
+    fig, ax = plt.subplots(figsize=(15, 6), dpi=kwargs.get("dpi"))
 
     # pyplot bar width units are always in days, need to convert width to frequency of data
     freq_str = candle_data.index.freqstr
@@ -283,7 +285,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, t
     plt.grid(linestyle=":")
 
     if retplot:
-        return ax
+        return fig
 
 
 def get_crosscorr(datax, datay, start_date=None, end_date=None, lag=0):
