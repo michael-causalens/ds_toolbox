@@ -14,7 +14,6 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
-# from matplotlib.
 
 from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
@@ -93,6 +92,8 @@ def corrplot(data, method="pearson", retplot=False, **kwargs):
         Input data. Remember time-series should be stationary
     method : str or callable
         See Dataframe.corr() for options
+    retplot: bool, default False
+        Return the figure object as well as plot it.
     **kwargs
         Plotting options: figsize (tuple of ints), cmap (str)
 
@@ -421,8 +422,6 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
 
         if ax.get_legend() is not None:
             ax.legend(prop=prop)
-
-
 
     # finally, if fig.suptitle() was used, update it. Annoyingly it is a protected attribute so triggers a warning.
     if hasattr(mpl_plot, "_suptitle"):
