@@ -11,9 +11,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
+from matplotlib.text import Annotation
 
 from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
@@ -23,7 +25,7 @@ from bokeh.palettes import all_palettes
 
 plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
                "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
-               "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse"]
+               "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse", "indigo"]
 
 
 def barplot(df_in, col_name=None, normed=False, **kwargs):
@@ -406,7 +408,7 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
     # https://stackoverflow.com/questions/58361594/
     plt.rcParams['axes.unicode_minus'] = False
 
-    # modify all the subplot texts
+    # modify all the subplot texts @TODO: Could this be done in one loop over ax.get_children()?
     for ax in axes:
 
         ax.set_title(ax.get_title(), fontproperties=prop)
@@ -415,6 +417,7 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
 
         # in case of scientific notation '1e6' etc.
         ax.yaxis.get_offset_text().set_font_properties(prop)
+
         for label in ax.get_xticklabels():
             label.set_fontproperties(prop)
         for label in ax.get_yticklabels():
@@ -422,6 +425,11 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
 
         if ax.get_legend() is not None:
             ax.legend(prop=prop)
+
+        # if there are text annotations on the plot
+        for child in ax.get_children():
+            if isinstance(child, Annotation):
+                child.set_font_properties(prop)
 
     # finally, if fig.suptitle() was used, update it. Annoyingly it is a protected attribute so triggers a warning.
     if hasattr(mpl_plot, "_suptitle"):
