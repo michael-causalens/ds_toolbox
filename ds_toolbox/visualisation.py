@@ -83,7 +83,7 @@ def countplot_sns(df_in, col_name, normed=True, **kwargs):
     plt.show()
 
 
-def corrplot(data, method="pearson", **kwargs):
+def corrplot(data, method="pearson", retplot=False, **kwargs):
     """
     Plot correlations between Dataframe columns in a heatmap.
 
@@ -102,9 +102,11 @@ def corrplot(data, method="pearson", **kwargs):
 
     corrs = data.corr(method=method)
 
-    plt.figure(figsize=figsize)
+    fig = plt.figure(figsize=figsize)
     sns.heatmap(corrs, cmap=cmap)
     plt.xticks(rotation=45, ha="right")
+    if retplot:
+        return fig
 
 
 def plot_r2(y_pred, y_true, **kwargs):
@@ -409,6 +411,9 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
         ax.set_title(ax.get_title(), fontproperties=prop)
         ax.set_xlabel(ax.get_xlabel(), fontproperties=prop)
         ax.set_ylabel(ax.get_ylabel(), fontproperties=prop)
+
+        # in case of scientific notation '1e6' etc.
+        ax.yaxis.get_offset_text().set_font_properties(prop)
         for label in ax.get_xticklabels():
             label.set_fontproperties(prop)
         for label in ax.get_yticklabels():
@@ -416,6 +421,8 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
 
         if ax.get_legend() is not None:
             ax.legend(prop=prop)
+
+
 
     # finally, if fig.suptitle() was used, update it. Annoyingly it is a protected attribute so triggers a warning.
     if hasattr(mpl_plot, "_suptitle"):
