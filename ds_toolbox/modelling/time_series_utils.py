@@ -582,7 +582,8 @@ def _get_ticks_from_str(freq_str=None, interval=None):
                      "FRI": mdates.FR,
                      "SAT": mdates.SA}
 
-    tick_dict = {"T": mdates.MinuteLocator(interval=interval),
+    tick_dict = {"s": mdates.SecondLocator(interval=interval),
+                 "T": mdates.MinuteLocator(interval=interval),
                  "H": mdates.HourLocator(interval=interval),
                  "D": mdates.DayLocator(interval=interval),
                  "W": mdates.WeekdayLocator(byweekday=dict_weekdays[anchor], interval=interval),
