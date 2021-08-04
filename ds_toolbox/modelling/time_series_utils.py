@@ -136,6 +136,8 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         color = cmap(range(len(df.columns)))
     elif kwargs.get("color"):
         color = kwargs["color"]
+        if isinstance(color, list) and len(color) != len(df.columns):
+            raise ValueError(f"Number of colours requested does not match number of columns to plot.")
     else:
         color = plot_colors[: len(df.columns)]
 
