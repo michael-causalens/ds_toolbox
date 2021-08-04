@@ -15,7 +15,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
-from matplotlib.text import Annotation
+from matplotlib.text import Annotation, Text
 
 from sklearn.metrics import r2_score
 from bokeh.models import ColumnDataSource
@@ -223,7 +223,7 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
         data.index = data.index.strftime(tick_fmt)
 
     if tick_freq is not None:
-        xticks = np.arange(0, len(data) - 1, tick_freq, dtype=np.int)
+        xticks = np.arange(0, len(data) - 1, tick_freq, dtype=int)
         xticklabels = data.index[xticks]
         sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False, xticklabels=xticklabels)
         plt.xticks(xticks, rotation=45, ha="right")
@@ -428,7 +428,7 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
 
         # if there are text annotations on the plot
         for child in ax.get_children():
-            if isinstance(child, Annotation):
+            if isinstance(child, Annotation) or isinstance(child, Text):
                 child.set_font_properties(prop)
 
     # finally, if fig.suptitle() was used, update it. Annoyingly it is a protected attribute so triggers a warning.
