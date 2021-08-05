@@ -1,9 +1,8 @@
 """
-misc_utils.py
+pandas_utils.py
 
 > useful helper functions for pandas Dataframes
 @todo: clean up repeated renamed_values code in map_to_signs()
-@todo: rename this as pandas_utils
 @todo: read_and_stack_csvs should accept relative paths as well
 @todo: typing hints for all functions
 """
@@ -141,23 +140,23 @@ def sequential_merge(lst_dfs, **kwargs):
     return df_combined
 
 
-def inverse_diff(y0, returns):
+def inverse_diff(y0, diffs):
     """
-    Convert returns to levels, i.e inverse of Series.diff()
+    Convert differences to levels, i.e inverse of Series.diff()
 
     Parameters
     ----------
     y0 : float
         Initial value
-    returns : pandas.Series
-        Values of returns
+    diffs : pandas.Series
+        Values of differences in units of levels
 
     Returns
     -------
     pandas.Series with levels instead of returns
 
     """
-    levels = np.concatenate(([y0], returns), axis=0).cumsum()
+    levels = np.concatenate(([y0], diffs), axis=0).cumsum()
     return pd.Series(levels)
 
 
@@ -315,6 +314,28 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
     wide_df = wide_df[orig_col_ordering]
     wide_df = wide_df.loc[orig_row_ordering]
     return wide_df
+
+
+def summarize(x: pd.Series):
+    """
+    Nicer formatting of the Series.describe() function in pandas
+
+    Parameters
+    ----------
+    x : pd.Series
+
+    Returns
+    -------
+    DataFrame
+    """
+    if not isinstance(x, pd.Series):
+        raise TypeError(f"Only accepts pandas.Series as args, not {type(x)}")
+
+    if x.name is None:
+        x.name = "series"
+
+    summary = x.describe().apply('{:.3f}'.format).to_frame(f"{x.name} summary stats")
+    return summary
 
 
 def read_and_stack_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
