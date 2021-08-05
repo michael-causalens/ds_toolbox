@@ -52,7 +52,6 @@ def standardize(df):
     """
     Scale original time-series to zero-mean and unit variance.
     """
-    _check_input(df)
     return (df - df.mean()) / df.std()
 
 
@@ -60,7 +59,6 @@ def normalize(df):
     """
     Scale original time-series to range [0,1]
     """
-    _check_input(df)
     return (df - df.min()) / (df.max() - df.min())
 
 
