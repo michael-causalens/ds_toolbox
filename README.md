@@ -20,9 +20,9 @@ $ source name_of_your_environment/bin/activate
 $ pip install -r requirements.txt
 ```
 
-Then  
+Then, in the top-level folder (containing `setup.py`)  
 ```
-$ python setup.py install
+$ pip install .
 ```
 
 To remove
