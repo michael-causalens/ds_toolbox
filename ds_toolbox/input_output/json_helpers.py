@@ -50,14 +50,17 @@ def read_json(in_path):
         return json.load(f_in)
 
 
-def read_jsonlines(in_path):
+def read_jsonlines(in_path, output="list"):
     """
-    Load a jsonl (jsonlines format) file into a list of dicts
+    Load a jsonl (jsonlines format) file into a list of dicts or a plain dict
 
     Parameters
     ----------
     in_path : str
         Full or relative path to jsonL file.
+    output : str, optional
+        Either 'list' for a list of dicts or 'dict' for a single dict.
+        The latter requires each line to have a single outermost key.
 
     Returns
     -------
@@ -65,9 +68,24 @@ def read_jsonlines(in_path):
     """
     if not in_path.endswith("jsonl"):
         warn("This may not be a jsonl file, may get parser errors.")
-    lines = []
-    for line in open(in_path, "r"):
-        lines.append(json.loads(line))
+
+    if output == "list":
+        lines = []
+    elif output == "dict":
+        lines = {}
+    else:
+        raise ValueError(f"output must be either 'list' or 'dict', not '{output}")
+
+    for i, line in enumerate(open(in_path, "r")):
+        parsed_line = json.loads(line)
+        if output == "list":
+            lines.append(parsed_line)
+        else:
+            keys = parsed_line.keys()
+            assert len(keys) == 1, f"Each line must have a single key, but line {i} has {len(keys)}"
+            k = list(parsed_line.keys())[0]
+            lines[k] = parsed_line[k]
+
     return lines
 
 
