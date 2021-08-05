@@ -5,12 +5,23 @@ Helper functions for reading and writing to json and accessing data in nested py
 """
 
 import json
+from warnings import warn
 from collections import OrderedDict
 
 
 def write_json(out_dict, out_path, sort_keys=True):
     """
     Output dictionary/JSON tree to file
+
+    Parameters
+    ----------
+    out_dict : dict
+        data to save
+    out_path : str
+        Name of output file
+    sort_keys : bool, default True
+        Alphanumerically sort keys before writing
+
     """
     if sort_keys:
         d = OrderedDict()
@@ -25,9 +36,39 @@ def write_json(out_dict, out_path, sort_keys=True):
 def read_json(in_path):
     """
     Load JSON from file
+
+    Parameters
+    ----------
+    in_path : str
+        Full or relative path to json file.
+
+    Returns
+    -------
+    dict
     """
     with open(in_path, "r") as f_in:
         return json.load(f_in)
+
+
+def read_jsonlines(in_path):
+    """
+    Load a jsonl (jsonlines format) file into a list of dicts
+
+    Parameters
+    ----------
+    in_path : str
+        Full or relative path to jsonL file.
+
+    Returns
+    -------
+    list of dicts
+    """
+    if not in_path.endswith("jsonl"):
+        warn("This may not be a jsonl file, may get parser errors.")
+    lines = []
+    for line in open(in_path, "r"):
+        lines.append(json.loads(line))
+    return lines
 
 
 def _extract(input_dict, arr, key):
