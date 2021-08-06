@@ -322,19 +322,21 @@ def summarize(x: pd.Series):
 
     Parameters
     ----------
-    x : pd.Series
+    x : pd.Series or 1d DataFrame
 
     Returns
     -------
     DataFrame
     """
-    if not isinstance(x, pd.Series):
-        raise TypeError(f"Only accepts pandas.Series as args, not {type(x)}")
+    if isinstance(x, pd.Series):
+        summary = x.describe().apply('{:.3f}'.format).to_frame(f"{x.name} summary stats")
+    elif isinstance(x, pd.DataFrame):
+        assert len(x.columns) == 1, "Only 1 column DataFrames allowed"
+        summary = x.describe().applymap('{:.3f}'.format)
+        summary.columns = [f"{x.columns[0]} summary stats"]
+    else:
+        raise TypeError(f"Invalid input type {type(x)}")
 
-    if x.name is None:
-        x.name = "series"
-
-    summary = x.describe().apply('{:.3f}'.format).to_frame(f"{x.name} summary stats")
     return summary
 
 
