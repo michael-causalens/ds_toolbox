@@ -316,7 +316,7 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
     return wide_df
 
 
-def summarize(x: Union[np.array, pd.Series, pd.DataFrame]):
+def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame]):
     """
     Nicer formatting of the Series.describe() function in pandas. Also accepts numpy ndarray.
 
