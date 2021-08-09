@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from functools import reduce
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 def count_nans(df_in, header=None, sort=False):
@@ -316,13 +316,13 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
     return wide_df
 
 
-def summarize(x: pd.Series):
+def summarize(x: Union[np.array, pd.Series, pd.DataFrame]):
     """
-    Nicer formatting of the Series.describe() function in pandas
+    Nicer formatting of the Series.describe() function in pandas. Also accepts numpy ndarray.
 
     Parameters
     ----------
-    x : pd.Series or 1d DataFrame
+    x : pd.Series or 1d DataFrame or 1d np.array
 
     Returns
     -------
@@ -330,6 +330,9 @@ def summarize(x: pd.Series):
     """
     if isinstance(x, pd.Series):
         summary = x.describe().apply('{:.3f}'.format).to_frame(f"{x.name} summary stats")
+    elif isinstance(x, np.ndarray):
+        assert x.ndim == 1, f"array must be one-dimensional but this has ndim = {x.ndim}"
+        summary = pd.Series(x).describe().apply('{:.3f}'.format).to_frame("summary stats")
     elif isinstance(x, pd.DataFrame):
         assert len(x.columns) == 1, "Only 1 column DataFrames allowed"
         summary = x.describe().applymap('{:.3f}'.format)
