@@ -316,27 +316,36 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
     return wide_df
 
 
-def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame]):
+def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str] = None):
     """
     Nicer formatting of the Series.describe() function in pandas. Also accepts numpy ndarray.
 
     Parameters
     ----------
     x : pd.Series or 1d DataFrame or 1d np.array
+        Data
+    name: str, optional
+        Header of output table will be "<name> summary stats".
 
     Returns
     -------
     DataFrame
     """
     if isinstance(x, pd.Series):
-        summary = x.describe().apply('{:.3f}'.format).to_frame(f"{x.name} summary stats")
+        if name is None:
+            name = x.name
+        summary = x.describe().apply('{:.3f}'.format).to_frame(f"{name} summary stats")
     elif isinstance(x, np.ndarray):
+        if name is None:
+            name = ""
         assert x.ndim == 1, f"array must be one-dimensional but this has ndim = {x.ndim}"
-        summary = pd.Series(x).describe().apply('{:.3f}'.format).to_frame("summary stats")
+        summary = pd.Series(x).describe().apply('{:.3f}'.format).to_frame(f"{name} summary stats")
     elif isinstance(x, pd.DataFrame):
         assert len(x.columns) == 1, "Only 1 column DataFrames allowed"
+        if name is None:
+            name = x.columns[0]
         summary = x.describe().applymap('{:.3f}'.format)
-        summary.columns = [f"{x.columns[0]} summary stats"]
+        summary.columns = [f"{name} summary stats"]
     else:
         raise TypeError(f"Invalid input type {type(x)}")
 
