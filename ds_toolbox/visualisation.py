@@ -28,34 +28,33 @@ plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise
                "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse", "indigo"]
 
 
-def barplot(df_in, col_name=None, normed=False, **kwargs):
+def barplot(df_in, normed=False, retplot=False, **kwargs):
     """
-    Bar chart of value counts for a categorical column
+    Bar chart of a pandas.Series with extra options
 
     Parameters
     ----------
-    df_in : pandas.Dataframe
+    df_in : pandas.Series
         data
-    col_name : str or list of strs
-        Which column(s) to plot
-    normed : bool
+    normed : bool, default False
         Sum heights of bars to 1 rather than total counts
+    retplot: bool, default False
+        Return the matplotlib.Figure instance
     **kwargs
-        Options for matplotlib, such as "xlabel", "ylabel", "title"
-
+        Options for matplotlib, such as "xlabel", "ylabel", "title", "figsize", "palette"
     """
-    data = df_in[col_name]
-
+    data = df_in.copy()
     if normed:
         data = data / data.sum()
-    x, y = data.index, data.values
-    plt.figure(figsize=(15, 6))
-    plt.bar(x, y, alpha=1, width=0.5, color="royalblue")
-    plt.xticks(x)
+    fig, ax = plt.subplots(figsize=kwargs.get("figsize", (15, 6)))
+
+    sns.barplot(x=data.index, y=data, palette=kwargs.get("palette", "viridis"), ax=ax)
+    plt.xticks(rotation=45)
     plt.xlabel(kwargs.get("xlabel"))
     plt.ylabel(kwargs.get("ylabel"))
     plt.title(kwargs.get("title"))
-    plt.show()
+    if retplot:
+        return fig
 
 
 def countplot_sns(df_in, col_name, normed=True, **kwargs):
