@@ -248,7 +248,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, t
     up = candle_data[candle_data.close > candle_data.open]
     down = candle_data[candle_data.close < candle_data.open]
 
-    fig, ax = plt.subplots(figsize=(15, 6), dpi=kwargs.get("dpi"))
+    fig, ax = plt.subplots(figsize=kwargs.get("figsize", (15, 6)), dpi=kwargs.get("dpi"))
 
     # pyplot bar width units are always in days, need to convert width to frequency of data
     freq_str = candle_data.index.freqstr
