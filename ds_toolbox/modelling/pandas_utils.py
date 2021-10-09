@@ -9,6 +9,7 @@ pandas_utils.py
 import numpy as np
 import pandas as pd
 from functools import reduce
+from scipy.stats import t
 
 from typing import List, Optional, Union
 
@@ -318,7 +319,7 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
 
 def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str] = None, **kwargs):
     """
-    Nicer formatting of the Series.describe() function in pandas. Also accepts numpy ndarray.
+    Series.describe() function in pandas with nicer formatting and extra statistics. Also accepts numpy ndarray.
 
     Parameters
     ----------
@@ -356,6 +357,10 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
     summary = x.describe(**kwargs).apply('{:.3f}'.format)
     summary["skew"] = x.skew()
     summary["kurtosis"] = x.kurtosis()
+
+    tstat = x.mean() / (x.std() / len(x))
+    summary["tstat"] = tstat
+    summary["tstat_pval"] = t(df=len(x)-1).sf(abs(tstat))
     summary = summary.to_frame(f"{name} summary stats")
     return summary
 
