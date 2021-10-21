@@ -165,6 +165,43 @@ def compare_model_metrics(models, metric_fn, features_train, features_test, y_tr
     return df_metrics
 
 
+def metrics_table(y: np.ndarray, yhat: np.ndarray, as_dataframe=True):
+    """
+    Metrics for a classification model.
+
+    Parameters
+    ----------
+    y : array
+        Target
+    yhat : array
+        Predictions
+    as_dataframe: bool, default True
+        Return DataFrame instead of Series
+
+    Returns
+    -------
+    pandas.DataFrame or Series of metrics
+    """
+    df_metrics = pd.Series(dtype="float", name="value")
+    df_metrics.index.name = "metric"
+
+    metrics_dict = {"Accuracy": accuracy_score,
+                    "Precision": precision_score,
+                    "Recall": recall_score,
+                    "F1": f1_score,
+                    "ROCAUC": roc_auc_score,
+                    "APC": average_precision_score}
+
+    for metric_string, metric_function in metrics_dict.items():
+        metric_result = metric_function(y, yhat)
+        df_metrics.loc[metric_string] = metric_result
+
+    if as_dataframe:
+        return df_metrics.to_frame()
+    else:
+        return df_metrics
+
+
 def compare_model_predictions(y_preds: list, y_true, model_names: list):
     """
     Compare classification metrics across several models to a single test set
