@@ -75,12 +75,15 @@ def construct_ewm_features(data, windows, features=None, **kwargs):
         raise ValueError("Series object must have a 'name' attribute")
 
     if features is None:
-        features = ["mean", "std"]
+        features = ["mean", "std", "zscore"]
 
     for window in windows:
         ewm = data.ewm(span=window, **kwargs)
         for feature in features:
-            result = getattr(ewm, feature)()
+            if feature == "zscore":
+                result = (data - ewm.mean()) / ewm.std()
+            else:
+                result = getattr(ewm, feature)()
             result.name = data.name + "_" + str(window) + "_step_ewm_" + feature
             lst_series.append(result)
 
