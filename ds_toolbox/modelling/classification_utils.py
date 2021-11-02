@@ -12,6 +12,9 @@ from collections import Counter
 from sklearn.metrics import roc_auc_score, roc_curve, average_precision_score
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
+from typing import Optional, List
+from warnings import warn
+
 
 def get_model_probs(model, features_train, features_test):
     """
@@ -94,6 +97,7 @@ def get_classification_metrics(model, metric_fn, features_train, features_test, 
     A pandas DataFrame with classification metrics as index and a column each for train and test.
     """
     # @TODO: add balanced accuracy, logloss, Brier score
+    warn("This function is deprecated and will be removed. Please use metrics_from_model() instead.")
     train_pred, test_pred = get_model_probs(model, features_train, features_test)
     best_threshold = get_best_threshold(model, metric_fn, features_train, features_test, y_test)
 
@@ -116,10 +120,6 @@ def get_classification_metrics(model, metric_fn, features_train, features_test, 
         df_metrics.loc[metric_string] = [train_score, test_score]
 
     return df_metrics
-
-
-def get_confusion_matrix():
-    pass
 
 
 def compare_model_metrics(models, metric_fn, features_train, features_test, y_train, y_test, model_names: list):
@@ -147,10 +147,9 @@ def compare_model_metrics(models, metric_fn, features_train, features_test, y_tr
     -------
     A pandas DataFrame with classification metrics as index and a column for each model.
     """
-
+    warn("This function is deprecated and will be removed. Please use metrics_from_model() instead.")
     if not isinstance(models, list):
         raise TypeError("First argument (models) should be a list of pre-trained models")
-
     if not len(models) == len(model_names):
         raise ValueError("models and model_names should be the same length")
 
@@ -223,6 +222,7 @@ def compare_model_predictions(y_preds: list, y_true, model_names: list):
     -------
     A pandas DataFrame with classification metrics as index and a column for each model.
     """
+    warn("This function is deprecated and will be removed. Please use metrics_from_model() instead.")
     metrics_dict = {"Accuracy": accuracy_score,
                     "Precision": precision_score,
                     "Recall": recall_score,
@@ -419,3 +419,149 @@ def plot_rocs(estimators, features, y_true, model_names=None):
     plt.ylabel("true positive rate")
     plt.legend()
     plt.show()
+
+
+def metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True):
+    """
+    Return a list of classification metrics for a trained model.
+
+    Parameters
+    ----------
+    X : array-like of shape (n, p)
+        Features. Must be same shape as the model was trained on.
+    y : array-like of shape (n, )
+        Target.
+    model : obj
+        Any model with an sklearn-like predict() method.
+    model_name : str, optional
+        For column header. Uses a string representation of model if not given.
+    as_dataframe : bool, default True
+        Return a DataFrame instead of a Series
+
+
+    Returns
+    -------
+    pd.DataFrame or Series.
+    """
+
+    if model_name is None:
+        model_name = str(model)
+    df_metrics = pd.Series(name=model_name, dtype=float)
+    df_metrics.index.name = "Metric"
+
+    metrics_dict = {"Accuracy": accuracy_score,
+                    "Precision": precision_score,
+                    "Recall": recall_score,
+                    "F1": f1_score,
+                    "ROCAUC": roc_auc_score,
+                    "APC": average_precision_score}
+
+    for metric_string, metric_function in metrics_dict.items():
+        df_metrics.loc[metric_string] = round(metric_function(y, model.predict(X)), 3)
+    if as_dataframe:
+        return df_metrics.to_frame(model_name)
+    else:
+        return df_metrics
+
+
+def metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
+    """
+    Return a table of classification metrics for a list of trained models.
+
+    Parameters
+    ----------
+    X : array-like of shape (n, p)
+        Features. Must be same shape as the model was trained on.
+    y : array-like of shape (n, )
+        Target.
+    models : list of obj
+        Elements can be any model with an sklearn-like predict() method.
+    model_names : list of str, optional
+        For column headers in the table. Uses a string representation of the models if not given.
+
+    Returns
+    -------
+    pd.DataFrame
+    """
+    df_metrics = pd.DataFrame()
+    if model_names is None:
+        model_names = [str(m) for m in models]
+    assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
+    for model, model_name in zip(models, model_names):
+        df_metrics[model_name] = metrics_from_model(X, y, model, model_name, as_dataframe=False)
+    return df_metrics
+
+
+def metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True):
+    """
+    Return a list of classification metrics for a truth and predictions array.
+
+    Parameters
+    ----------
+    y : array-like of shape (n, )
+        Target.
+    yhat : array-like of shape (n, )
+        Predictions
+    model_name : str, optional
+        For column header. Uses a string representation of model if not given.
+    as_dataframe : bool, default True
+        Return a DataFrame instead of a Series
+
+
+    Returns
+    -------
+    pd.DataFrame or Series.
+    """
+    assert y.shape == yhat.shape, f"Predictions and target must have the same shape. {y.shape} != {yhat.shape}"
+    assert yhat.ndim == 1, f"Expected a scalar array."
+    if model_name is None:
+        if isinstance(yhat, pd.Series):
+            if yhat.name is not None:
+                model_name = yhat.name
+            else:
+                model_name = "model"
+        else:
+            model_name = "model"
+    df_metrics = pd.Series(name=model_name, dtype=float)
+    df_metrics.index.name = "Metric"
+
+    metrics_dict = {"Accuracy": accuracy_score,
+                    "Precision": precision_score,
+                    "Recall": recall_score,
+                    "F1": f1_score,
+                    "ROCAUC": roc_auc_score,
+                    "APC": average_precision_score}
+
+    for metric_string, metric_function in metrics_dict.items():
+        df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
+    if as_dataframe:
+        return df_metrics.to_frame(model_name)
+    else:
+        return df_metrics
+
+
+def metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
+    """
+    Return a table of classification metrics for a truth and predictions arrays.
+
+    Parameters
+    ----------
+    y : array-like of shape (n, )
+        Target.
+    yhat_lst : list of array-like of shape (n, )
+        List of arrays of predictions from each model.
+    model_names : str, optional
+        For column headers in table. Defaults to "model1", "model2" etc. if not given.
+        Or, if yhat is a pd.Series, tries to use the name of the Series.
+
+    Returns
+    -------
+    pd.DataFrame.
+    """
+    df_metrics = pd.DataFrame()
+    if model_names is None:
+        model_names = ["model_" + str(i + 1) for i in range(len(yhat_lst))]
+    assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
+    for yhat, model_name in zip(yhat_lst, model_names):
+        df_metrics[model_name] = metrics_from_pred(y, yhat, model_name, as_dataframe=False)
+    return df_metrics
