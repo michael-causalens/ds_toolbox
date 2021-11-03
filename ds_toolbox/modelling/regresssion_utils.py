@@ -273,6 +273,7 @@ def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None)
     df_metrics = pd.DataFrame()
     if model_names is None:
         model_names = ["model_" + str(i + 1) for i in range(len(yhat_lst))]
+    assert isinstance(model_names, list), f"Expected a list for model_names, got {type(model_names)}"
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
         df_metrics[model_name] = reg_metrics_from_pred(y, yhat, model_name, as_dataframe=False)
