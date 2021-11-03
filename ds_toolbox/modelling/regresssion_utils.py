@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import r2_score, mean_squared_error, median_absolute_error, max_error, mean_absolute_error
 from sklearn.utils import check_array
-from typing import Optional, List
+from typing import Optional, List, Dict, Callable
 from warnings import warn
 
 
@@ -129,7 +129,8 @@ def compare_regression_model_predictions(y_preds, y_true, model_names):
     return df_metrics
 
 
-def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True):
+def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True,
+                           extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a list of regression metrics for a trained model.
 
@@ -145,7 +146,11 @@ def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dat
         For column header. Uses a string representation of model if not given.
     as_dataframe : bool, default True
         Return a DataFrame instead of a Series
-
+    extra_metrics : dict, optional
+        The default metrics are MAE, MSE, pearson r and R^2.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.explained_variance_score}
 
     Returns
     -------
@@ -161,6 +166,8 @@ def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dat
                     "MSE": mean_squared_error,
                     "pearson": np.corrcoef,
                     f"R\N{superscript TWO}": r2_score}
+    if extra_metrics is not None:
+        metrics_dict.update(extra_metrics)
 
     yhat = model.predict(X)
     for metric_string, metric_function in metrics_dict.items():
@@ -174,7 +181,8 @@ def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dat
         return df_metrics
 
 
-def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
+def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None,
+                            extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a table of regression metrics for a list of trained models.
 
@@ -188,6 +196,11 @@ def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = Non
         Elements can be any model with an sklearn-like predict() method.
     model_names : list of str, optional
         For column headers in the table. Uses a string representation of the models if not given.
+    extra_metrics : dict, optional
+        The default metrics are MAE, MSE, pearson r and R^2.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.explained_variance_score}
 
     Returns
     -------
@@ -200,11 +213,12 @@ def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = Non
     assert isinstance(model_names, list), f"Expected a list for model_names, got {type(model_names)}"
     assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
     for model, model_name in zip(models, model_names):
-        df_metrics[model_name] = reg_metrics_from_model(X, y, model, model_name, as_dataframe=False)
+        df_metrics[model_name] = reg_metrics_from_model(X, y, model, model_name, as_dataframe=False, extra_metrics=extra_metrics)
     return df_metrics
 
 
-def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True):
+def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True,
+                          extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a list of regression metrics for a truth and predictions array.
 
@@ -218,7 +232,11 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
         For column header. Uses a string representation of model if not given.
     as_dataframe : bool, default True
         Return a DataFrame instead of a Series
-
+    extra_metrics : dict, optional
+        The default metrics are MAE, MSE, pearson r and R^2.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.explained_variance_score}
 
     Returns
     -------
@@ -241,6 +259,8 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
                     "MSE": mean_squared_error,
                     "pearson": np.corrcoef,
                     f"R\N{superscript TWO}": r2_score}
+    if extra_metrics is not None:
+        metrics_dict.update(extra_metrics)
     for metric_string, metric_function in metrics_dict.items():
         if metric_string == "pearson":
             df_metrics.loc[metric_string] = round(metric_function(y, yhat)[0, 1], 3)
@@ -252,7 +272,8 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
         return df_metrics
 
 
-def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
+def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
+                           extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a table of regression metrics for a truth and predictions arrays.
 
@@ -265,6 +286,11 @@ def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None)
     model_names : str, optional
         For column headers in table. Defaults to "model1", "model2" etc. if not given.
         Or, if yhat is a pd.Series, tries to use the name of the Series.
+    extra_metrics : dict, optional
+        The default metrics are MAE, MSE, pearson r and R^2.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.explained_variance_score}
 
     Returns
     -------
@@ -276,5 +302,6 @@ def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None)
     assert isinstance(model_names, list), f"Expected a list for model_names, got {type(model_names)}"
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
-        df_metrics[model_name] = reg_metrics_from_pred(y, yhat, model_name, as_dataframe=False)
+        df_metrics[model_name] = reg_metrics_from_pred(y, yhat, model_name, as_dataframe=False,
+                                                       extra_metrics=extra_metrics)
     return df_metrics
