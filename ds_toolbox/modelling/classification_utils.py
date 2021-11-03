@@ -181,6 +181,7 @@ def metrics_table(y: np.ndarray, yhat: np.ndarray, as_dataframe=True):
     -------
     pandas.DataFrame or Series of metrics
     """
+    warn("This function is deprecated and will be removed. Please use metrics_from_pred() instead.")
     df_metrics = pd.Series(dtype="float", name="value")
     df_metrics.index.name = "metric"
 
@@ -421,7 +422,7 @@ def plot_rocs(estimators, features, y_true, model_names=None):
     plt.show()
 
 
-def metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True):
+def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True):
     """
     Return a list of classification metrics for a trained model.
 
@@ -456,15 +457,16 @@ def metrics_from_model(X, y, model, model_name: Optional[str] = None, as_datafra
                     "ROCAUC": roc_auc_score,
                     "APC": average_precision_score}
 
+    yhat = model.predict(X)
     for metric_string, metric_function in metrics_dict.items():
-        df_metrics.loc[metric_string] = round(metric_function(y, model.predict(X)), 3)
+        df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
     if as_dataframe:
         return df_metrics.to_frame(model_name)
     else:
         return df_metrics
 
 
-def metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
+def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
     """
     Return a table of classification metrics for a list of trained models.
 
@@ -486,13 +488,14 @@ def metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
     df_metrics = pd.DataFrame()
     if model_names is None:
         model_names = [str(m) for m in models]
+    assert isinstance(model_names, list), f"Expected a list for model_names, got {type(model_names)}"
     assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
     for model, model_name in zip(models, model_names):
-        df_metrics[model_name] = metrics_from_model(X, y, model, model_name, as_dataframe=False)
+        df_metrics[model_name] = class_metrics_from_model(X, y, model, model_name, as_dataframe=False)
     return df_metrics
 
 
-def metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True):
+def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True):
     """
     Return a list of classification metrics for a truth and predictions array.
 
@@ -540,7 +543,7 @@ def metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=Tr
         return df_metrics
 
 
-def metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
+def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
     """
     Return a table of classification metrics for a truth and predictions arrays.
 
@@ -563,5 +566,5 @@ def metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
         model_names = ["model_" + str(i + 1) for i in range(len(yhat_lst))]
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
-        df_metrics[model_name] = metrics_from_pred(y, yhat, model_name, as_dataframe=False)
+        df_metrics[model_name] = class_metrics_from_pred(y, yhat, model_name, as_dataframe=False)
     return df_metrics
