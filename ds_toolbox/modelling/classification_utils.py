@@ -12,7 +12,7 @@ from collections import Counter
 from sklearn.metrics import roc_auc_score, roc_curve, average_precision_score
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Callable
 
 
 def get_model_probs(model, features_train, features_test):
@@ -251,7 +251,8 @@ def plot_rocs(estimators, features, y_true, model_names=None):
     plt.show()
 
 
-def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True):
+def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True,
+                             extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a list of classification metrics for a trained model.
 
@@ -267,38 +268,27 @@ def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_d
         For column header. Uses a string representation of model if not given.
     as_dataframe : bool, default True
         Return a DataFrame instead of a Series
-
+    extra_metrics : dict, optional
+        The default metrics are accuracy, precision, recall, F1, ROCAUC, and average precision.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.logloss}
 
     Returns
     -------
     pd.DataFrame or Series.
     """
 
-    if model_name is None:
-        model_name = str(model)
-    df_metrics = pd.Series(name=model_name, dtype=float)
-    df_metrics.index.name = "Metric"
-
-    metrics_dict = {"Accuracy": accuracy_score,
-                    "Precision": precision_score,
-                    "Recall": recall_score,
-                    "F1": f1_score,
-                    "ROCAUC": roc_auc_score,
-                    "APC": average_precision_score}
-
     yhat = model.predict(X)
-    for metric_string, metric_function in metrics_dict.items():
-        df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
-    if as_dataframe:
-        return df_metrics.to_frame(model_name)
-    else:
-        return df_metrics
+    return class_metrics_from_pred(y, yhat, model_name=model_name, as_dataframe=as_dataframe,
+                                   extra_metrics=extra_metrics)
 
 
-def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None):
+def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None,
+                              extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a table of classification metrics for a list of trained models.
-
+}
     Parameters
     ----------
     X : array-like of shape (n, p)
@@ -309,6 +299,11 @@ def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = N
         Elements can be any model with an sklearn-like predict() method.
     model_names : list of str, optional
         For column headers in the table. Uses a string representation of the models if not given.
+    extra_metrics : dict, optional
+        The default metrics are accuracy, precision, recall, F1, ROCAUC, and average precision.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.logloss}
 
     Returns
     -------
@@ -320,11 +315,13 @@ def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = N
     assert isinstance(model_names, list), f"Expected a list for model_names, got {type(model_names)}"
     assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
     for model, model_name in zip(models, model_names):
-        df_metrics[model_name] = class_metrics_from_model(X, y, model, model_name, as_dataframe=False)
+        df_metrics[model_name] = class_metrics_from_model(X, y, model, model_name, as_dataframe=False,
+                                                          extra_metrics=extra_metrics)
     return df_metrics
 
 
-def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True):
+def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True,
+                            extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a list of classification metrics for a truth and predictions array.
 
@@ -338,7 +335,11 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
         For column header. Uses a string representation of model if not given.
     as_dataframe : bool, default True
         Return a DataFrame instead of a Series
-
+    extra_metrics : dict, optional
+        The default metrics are accuracy, precision, recall, F1, ROCAUC, and average precision.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.logloss}
 
     Returns
     -------
@@ -363,6 +364,8 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
                     "F1": f1_score,
                     "ROCAUC": roc_auc_score,
                     "APC": average_precision_score}
+    if extra_metrics is not None:
+        metrics_dict.update(extra_metrics)
 
     for metric_string, metric_function in metrics_dict.items():
         df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
@@ -372,7 +375,8 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
         return df_metrics
 
 
-def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None):
+def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
+                             extra_metrics: Optional[Dict[str, Callable]] = None):
     """
     Return a table of classification metrics for a truth and predictions arrays.
 
@@ -385,6 +389,11 @@ def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = Non
     model_names : str, optional
         For column headers in table. Defaults to "model1", "model2" etc. if not given.
         Or, if yhat is a pd.Series, tries to use the name of the Series.
+    extra_metrics : dict, optional
+        The default metrics are accuracy, precision, recall, F1, ROCAUC, and average precision.
+        Extra metrics can be passed in the form {"name" : func}
+        where func is a callable of two arrays (y and yhat) that returns a single float.
+        e.g. {"explained_var": sklearn.metrics.logloss}
 
     Returns
     -------
@@ -395,5 +404,6 @@ def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = Non
         model_names = ["model_" + str(i + 1) for i in range(len(yhat_lst))]
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
-        df_metrics[model_name] = class_metrics_from_pred(y, yhat, model_name, as_dataframe=False)
+        df_metrics[model_name] = class_metrics_from_pred(y, yhat, model_name, as_dataframe=False,
+                                                         extra_metrics=extra_metrics)
     return df_metrics
