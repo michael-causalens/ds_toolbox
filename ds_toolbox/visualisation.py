@@ -28,6 +28,24 @@ plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise
                "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse", "indigo"]
 
 
+def rgb2hex(*args):
+    """
+    Get a hexadecimal color code from its RGB values
+
+    Parameters
+    ----------
+    args: 3 integers corresponding to RGB values
+
+    Returns
+    -------
+    str
+    """
+    assert len(args) == 3, f"Expected exactly 3 args, got {len(args)}"
+    for arg in args:
+        assert arg in range(256), f"{arg} is invalid. Expected integer in range 0-255"
+    return '#%02x%02x%02x' % args
+
+
 def barplot(df_in, normed=False, retplot=False, **kwargs):
     """
     Bar chart of a pandas.Series with extra options
