@@ -252,7 +252,7 @@ def plot_rocs(estimators, features, y_true, model_names=None):
 
 
 def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True,
-                             extra_metrics: Optional[Dict[str, Callable]] = None):
+                             extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a list of classification metrics for a trained model.
 
@@ -273,6 +273,8 @@ def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_d
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.logloss}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -281,11 +283,11 @@ def class_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_d
 
     yhat = model.predict(X)
     return class_metrics_from_pred(y, yhat, model_name=model_name, as_dataframe=as_dataframe,
-                                   extra_metrics=extra_metrics)
+                                   extra_metrics=extra_metrics, precision=precision)
 
 
-def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None,
-                              extra_metrics: Optional[Dict[str, Callable]] = None):
+def class_metrics_from_models(X, y, models: List, model_names: Optional[List[str]] = None,
+                              extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a table of classification metrics for a list of trained models.
 }
@@ -304,6 +306,8 @@ def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = N
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.logloss}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -316,12 +320,12 @@ def class_metrics_from_models(X, y, models, model_names: Optional[List[str]] = N
     assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
     for model, model_name in zip(models, model_names):
         df_metrics[model_name] = class_metrics_from_model(X, y, model, model_name, as_dataframe=False,
-                                                          extra_metrics=extra_metrics)
+                                                          extra_metrics=extra_metrics, precision=precision)
     return df_metrics
 
 
 def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True,
-                            extra_metrics: Optional[Dict[str, Callable]] = None):
+                            extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a list of classification metrics for a truth and predictions array.
 
@@ -340,6 +344,8 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.logloss}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -357,6 +363,8 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
             model_name = "model"
     df_metrics = pd.Series(name=model_name, dtype=float)
     df_metrics.index.name = "Metric"
+    if precision is None:
+        precision = 3
 
     metrics_dict = {"Accuracy": accuracy_score,
                     "Precision": precision_score,
@@ -368,7 +376,7 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
         metrics_dict.update(extra_metrics)
 
     for metric_string, metric_function in metrics_dict.items():
-        df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
+        df_metrics.loc[metric_string] = round(metric_function(y, yhat), precision)
     if as_dataframe:
         return df_metrics.to_frame(model_name)
     else:
@@ -376,7 +384,7 @@ def class_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafr
 
 
 def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
-                             extra_metrics: Optional[Dict[str, Callable]] = None):
+                             extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a table of classification metrics for a truth and predictions arrays.
 
@@ -394,6 +402,8 @@ def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = Non
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.logloss}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -406,5 +416,5 @@ def class_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = Non
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
         df_metrics[model_name] = class_metrics_from_pred(y, yhat, model_name, as_dataframe=False,
-                                                         extra_metrics=extra_metrics)
+                                                         extra_metrics=extra_metrics, precision=precision)
     return df_metrics

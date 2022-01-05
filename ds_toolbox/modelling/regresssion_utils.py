@@ -49,7 +49,7 @@ def symm_mean_abs_perc_error(y_true, y_pred, regulate=True):
 
 
 def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dataframe=True,
-                           extra_metrics: Optional[Dict[str, Callable]] = None):
+                           extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a list of regression metrics for a trained model.
 
@@ -70,6 +70,8 @@ def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dat
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.explained_variance_score}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -77,11 +79,12 @@ def reg_metrics_from_model(X, y, model, model_name: Optional[str] = None, as_dat
     """
 
     yhat = model.predict(X)
-    return reg_metrics_from_pred(y, yhat, model_name=model_name, as_dataframe=as_dataframe, extra_metrics=extra_metrics)
+    return reg_metrics_from_pred(y, yhat, model_name=model_name, as_dataframe=as_dataframe,
+                                 extra_metrics=extra_metrics, precision=precision)
 
 
-def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = None,
-                            extra_metrics: Optional[Dict[str, Callable]] = None):
+def reg_metrics_from_models(X, y, models: List, model_names: Optional[List[str]] = None,
+                            extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a table of regression metrics for a list of trained models.
 
@@ -100,6 +103,8 @@ def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = Non
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.explained_variance_score}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -112,12 +117,12 @@ def reg_metrics_from_models(X, y, models, model_names: Optional[List[str]] = Non
     assert len(models) == len(model_names), f"Length mismatch: models and model_names must be same length."
     for model, model_name in zip(models, model_names):
         df_metrics[model_name] = reg_metrics_from_model(X, y, model, model_name, as_dataframe=False,
-                                                        extra_metrics=extra_metrics)
+                                                        extra_metrics=extra_metrics, precision=precision)
     return df_metrics
 
 
 def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_dataframe=True,
-                          extra_metrics: Optional[Dict[str, Callable]] = None):
+                          extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a list of regression metrics for a truth and predictions array.
 
@@ -136,6 +141,8 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.explained_variance_score}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -153,6 +160,8 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
             model_name = "model"
     df_metrics = pd.Series(name=model_name, dtype=float)
     df_metrics.index.name = "Metric"
+    if precision is None:
+        precision = 3
 
     metrics_dict = {"MAE": mean_absolute_error,
                     "MSE": mean_squared_error,
@@ -162,9 +171,9 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
         metrics_dict.update(extra_metrics)
     for metric_string, metric_function in metrics_dict.items():
         if metric_string == "pearson":
-            df_metrics.loc[metric_string] = round(metric_function(y, yhat)[0, 1], 3)
+            df_metrics.loc[metric_string] = round(metric_function(y, yhat)[0, 1], precision)
         else:
-            df_metrics.loc[metric_string] = round(metric_function(y, yhat), 3)
+            df_metrics.loc[metric_string] = round(metric_function(y, yhat), precision)
     if as_dataframe:
         return df_metrics.to_frame(model_name)
     else:
@@ -172,7 +181,7 @@ def reg_metrics_from_pred(y, yhat, model_name: Optional[str] = None, as_datafram
 
 
 def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
-                           extra_metrics: Optional[Dict[str, Callable]] = None):
+                           extra_metrics: Optional[Dict[str, Callable]] = None, precision: Optional[int] = None):
     """
     Return a table of regression metrics for a truth and list of predictions arrays.
 
@@ -190,6 +199,8 @@ def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
         Extra metrics can be passed in the form {"name" : func}
         where func is a callable of two arrays (y and yhat) that returns a single float.
         e.g. {"explained_var": sklearn.metrics.explained_variance_score}
+    precision: int, optional
+        Number of signficant figures to display in table
 
     Returns
     -------
@@ -202,5 +213,5 @@ def reg_metrics_from_preds(y, yhat_lst, model_names: Optional[List[str]] = None,
     assert len(model_names) == len(yhat_lst), f"Length mismatch: yhat_lst and model_names must be same length."
     for yhat, model_name in zip(yhat_lst, model_names):
         df_metrics[model_name] = reg_metrics_from_pred(y, yhat, model_name, as_dataframe=False,
-                                                       extra_metrics=extra_metrics)
+                                                       extra_metrics=extra_metrics, precision=precision)
     return df_metrics
