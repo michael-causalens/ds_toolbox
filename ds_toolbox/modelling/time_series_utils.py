@@ -103,8 +103,8 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     """
     df = df_in.copy()
 
-    # do not limit number of plots if using a continuous colour palette
-    if kwargs.get("cmap"):
+    # do not limit number of plots if colours are specified, will check if the numbers match up later
+    if kwargs.get("cmap") or kwargs.get("color"):
         limit_plots = False
     else:
         limit_plots = True
