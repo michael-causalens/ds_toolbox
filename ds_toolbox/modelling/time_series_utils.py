@@ -17,7 +17,7 @@ from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
 from ..visualisation import plot_colors
 from pandas.tseries.offsets import BDay
-from typing import Union
+from typing import Union, Optional
 
 
 register_matplotlib_converters()
@@ -37,14 +37,14 @@ def _check_input(df: pd.DataFrame):
             print(f"Failed to convert Dataframe index of type {type(df.index)} to a pandas DatetimeIndex")
 
 
-def _plot_check_input(df):
+def _plot_check_input(df, limit_plots: Optional[bool] = True):
     """
     Check time-series input DataFrame is correct format for plotting
     """
     _check_input(df)
 
     max_plots = len(plot_colors)
-    if len(df.columns) > max_plots:
+    if len(df.columns) > max_plots and limit_plots:
         raise ValueError(f"requested number of plots {len(df.columns)} exceeds maximum {max_plots}")
         
 
@@ -102,7 +102,13 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     a matplotlib.figure.Figure object if retplot is True
     """
     df = df_in.copy()
-    _plot_check_input(df)
+
+    # do not limit number of plots if using a continuous colour palette
+    if kwargs.get("cmap"):
+        limit_plots = False
+    else:
+        limit_plots = True
+    _plot_check_input(df, limit_plots)
 
     if start_date is not None:
         df = df[df.index >= start_date]
