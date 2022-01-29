@@ -358,9 +358,9 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
     summary["skew"] = x.skew()
     summary["kurtosis"] = x.kurtosis()
 
-    tstat = x.mean() / (x.std() / len(x))
+    tstat = x.mean() / (x.std() / np.sqrt(len(x)))
     summary["tstat"] = tstat
-    summary["tstat_pval"] = t(df=len(x)-1).sf(abs(tstat))
+    summary["tstat_pval"] = 2 * t(df=len(x)-1).sf(abs(tstat))  # abs(tstat) means use 2 sided pvalue
     summary = summary.to_frame(f"{name} summary stats")
     return summary
 
