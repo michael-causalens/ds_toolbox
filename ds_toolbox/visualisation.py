@@ -425,8 +425,6 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
     # https://stackoverflow.com/questions/58361594/
     plt.rcParams['axes.unicode_minus'] = False
 
-
-
     # modify all the subplot texts @TODO: Could this be done in one loop over ax.get_children()?
     for ax in axes:
 
@@ -443,15 +441,7 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
             label.set_fontproperties(prop)
 
         if ax.get_legend() is not None:
-
-            # changing the legend font resets its position so store the old position and update it later
-            loc = ax.legend_._loc
-            loc = [k for k, v in ax.legend_.codes.items() if v == loc][0]  # convert from '0' to 'upper left' etc.
-            try:
-                bbox = ax.legend_._bbox_to_anchor._bbox
-            except AttributeError:  # no bbox defined
-                bbox = None
-            ax.legend(prop=prop, loc=loc, bbox_to_anchor=bbox)
+            ax.legend(prop=prop)
 
         # if there are text annotations on the plot
         for child in ax.get_children():
