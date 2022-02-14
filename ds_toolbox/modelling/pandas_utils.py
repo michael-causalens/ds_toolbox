@@ -341,10 +341,10 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
                 name = ""
             else:
                 name = x.name
-    elif isinstance(x, np.ndarray):
+    elif isinstance(x, (np.ndarray, list)):
         if name is None:
             name = ""
-        assert x.ndim == 1, f"array must be one-dimensional but this has ndim = {x.ndim}"
+        assert np.array(x).ndim == 1, f"array must be one-dimensional but this has ndim = {x.ndim}"
         x = pd.Series(x)
     elif isinstance(x, pd.DataFrame):
         assert len(x.columns) == 1, "Only 1 column DataFrames allowed"
