@@ -317,7 +317,8 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
     return wide_df
 
 
-def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str] = None, **kwargs):
+def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str] = None,
+              rounding: Optional[int] = None, **kwargs):
     """
     Series.describe() function in pandas with nicer formatting and extra statistics. Also accepts numpy ndarray.
 
@@ -327,6 +328,8 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
         Data
     name: str, optional
         Header of output table will be "<name> summary stats".
+    rounding: int, optional
+        Number of decimal places to show in table, defaults to 3
     **kwargs
         Extra options for pandas.DataFrame.describe()
 
@@ -354,14 +357,14 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
     else:
         raise TypeError(f"Invalid input type {type(x)}")
 
-    summary = x.describe(**kwargs).apply('{:.3f}'.format)
+    summary = x.describe(**kwargs)
     summary["skew"] = x.skew()
     summary["kurtosis"] = x.kurtosis()
 
     tstat = x.mean() / (x.std() / np.sqrt(len(x)))
     summary["tstat"] = tstat
     summary["tstat_pval"] = 2 * t(df=len(x)-1).sf(abs(tstat))  # abs(tstat) means use 2 sided pvalue
-    summary = summary.to_frame(f"{name} summary stats")
+    summary = summary.to_frame(f"{name} summary stats").round(rounding)
     return summary
 
 
