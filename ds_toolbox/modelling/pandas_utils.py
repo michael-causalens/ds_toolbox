@@ -318,7 +318,7 @@ def smart_pivot(lst_dfs_in: List[pd.DataFrame], df_names: List[str],
 
 
 def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str] = None,
-              rounding: Optional[int] = None, **kwargs):
+              rounding: Optional[int] = 3, **kwargs):
     """
     Series.describe() function in pandas with nicer formatting and extra statistics. Also accepts numpy ndarray.
 
