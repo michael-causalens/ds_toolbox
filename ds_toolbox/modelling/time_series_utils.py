@@ -15,7 +15,7 @@ from matplotlib import cm
 from pandas.tseries.frequencies import to_offset
 from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
-from ..visualisation import plot_colors
+from ds_toolbox.visualisation import plot_colors
 from pandas.tseries.offsets import BDay
 from typing import Union, Optional
 
@@ -46,7 +46,7 @@ def _plot_check_input(df, limit_plots: Optional[bool] = True):
     max_plots = len(plot_colors)
     if len(df.columns) > max_plots and limit_plots:
         raise ValueError(f"requested number of plots {len(df.columns)} exceeds maximum {max_plots}")
-        
+
 
 def standardize(df):
     """
@@ -63,7 +63,7 @@ def normalize(df):
 
 
 def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, tick_fmt=None,
-         retplot=False, labels: list = None, **kwargs):
+         ax=None, retplot=False, labels: list = None, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
@@ -84,8 +84,12 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     tick_fmt : str, optional
         String format of x-axis ticks. Defaults to %Y-%m-%d but can be any valid strftime specifier.
         See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
+    ax: matplotlib AxesSubplot, optional
+        Plot the figure on an existing Axes instead of creating a new one.
     retplot : bool
-        return an axis object from the function call as well as plot it
+        return the Figure object from the function call as well as plot it
+        i.e. fig = ts.plot(..., retplot=True)
+        # TODO: deprecate this in favour of ax
     labels : list of strs, optional
         Use these labels instead of column names
     **kwargs
@@ -145,8 +149,13 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     else:
         color = plot_colors[: len(df.columns)]
 
-    fig, ax = plt.subplots(dpi=kwargs.get("dpi"))
-    figsize = kwargs.get("figsize", (15, 6))
+    if ax is None:
+        fig, ax = plt.subplots(dpi=kwargs.get("dpi"))
+        figsize = kwargs.get("figsize", (15, 6))
+    else:
+        assert not retplot, f"Can't both pass an input Axes and return output Figure. Choose one or the other."
+        figsize = (ax.figure.get_figwidth(), ax.figure.get_figheight())
+        fig = None
     linewidth = kwargs.get("linewidth", 2)
     df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
 
