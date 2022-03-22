@@ -63,7 +63,7 @@ def normalize(df):
 
 
 def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=None, tick_freq=None, tick_fmt=None,
-         ax=None, retplot=False, labels: list = None, **kwargs):
+         ax=None, labels: list = None, filled=False, **kwargs):
     """
     Plot one or more time-series organized as columns in a pandas.DataFrame with a datetime index.
 
@@ -86,12 +86,10 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         See https://docs.python.org/3/library/datetime.html#strftime-and-strptime-behavior
     ax: matplotlib AxesSubplot, optional
         Plot the figure on an existing Axes instead of creating a new one.
-    retplot : bool
-        return the Figure object from the function call as well as plot it
-        i.e. fig = ts.plot(..., retplot=True)
-        # TODO: deprecate this in favour of ax
     labels : list of strs, optional
         Use these labels instead of column names
+    filled : bool, default False
+        Stacked area chart instead of lines
     **kwargs
         Other plotting options for matplotlib
         Valid arguments are: cmap - named color palette e.g. viridis (see matplotlib for list),
@@ -127,15 +125,6 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     if standardized:
         df = standardize(df)
 
-    # only plot ticks if fewer than 100 points shown, otherwise looks cluttered
-    if "style" not in kwargs:
-        if len(df) > 100:
-            linestyle = "-"
-        else:
-            linestyle = "-o"
-    else:
-        linestyle = kwargs["style"]
-
     # specify plot colors
     if kwargs.get("cmap"):
         if kwargs.get("color"):
@@ -153,11 +142,20 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         fig, ax = plt.subplots(dpi=kwargs.get("dpi"))
         figsize = kwargs.get("figsize", (15, 6))
     else:
-        assert not retplot, f"Can't both pass an input Axes and return output Figure. Choose one or the other."
         figsize = (ax.figure.get_figwidth(), ax.figure.get_figheight())
-        fig = None
     linewidth = kwargs.get("linewidth", 2)
-    df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
+    if filled:
+        df.plot.area(stacked=True, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
+    else:
+        # for a line plot, only plot individual data points if fewer than 100, otherwise looks cluttered
+        if "style" not in kwargs:
+            if len(df) > 100:
+                linestyle = "-"
+            else:
+                linestyle = "-o"
+        else:
+            linestyle = kwargs["style"]
+        df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
 
     if tick_fmt is not None:
         ax.xaxis.set_major_formatter(mdates.DateFormatter(tick_fmt))
@@ -168,8 +166,6 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
 
     ax.xaxis.grid(True, which='major', linestyle=':')
     ax.yaxis.grid(True, which='major', linestyle=':')
-    if retplot:
-        return fig
 
 
 def double_yaxis_plot(ts1, ts2, start_date=None, end_date=None, **kwargs):
