@@ -11,7 +11,7 @@ import pandas as pd
 from functools import reduce
 from scipy.stats import t
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Callable, Any
 
 
 def count_nans(df_in, header=None, sort=False):
@@ -368,47 +368,31 @@ def summarize(x: Union[np.ndarray, pd.Series, pd.DataFrame], name: Optional[str]
     return summary
 
 
-def read_and_stack_csvs(file_list: list, rename_columns: list = None, concat_axis=None, verbose=False, **kwargs):
+def dataframe_loop_and_concat(function: Callable, list_of_inputs: List[Any], axis=1, **kwargs):
     """
-    Load a list of csv files and concatenate into a pandas Datafame.
+    Apply a function that returns a Series/DataFrame for each item in a list,
+    then concatenate the resulting list along 'axis'.
+    Typical usage is to column stack a list of DataFrames with the same index.
 
     Parameters
     ----------
-    file_list : list of strings
-        Paths to csv files to load
-    rename_columns : list of strings
-        If concatenating along columns, rename the columns if they have the same name in all input files.
-    concat_axis : int (optional)
-        Concatenate the final list of Dataframes: 0 for along the row axis, 1 for along the column axis.
-    verbose : bool (default=False)
-        Display iteration step of file loop.
+    function: callable
+        any function that takes an item from list_of_inputs and returns a Series/DataFrame
+    list_of_inputs: list
+        args for function
+    axis : int, default 1
+        1 for column stack, 0 for row stack
     **kwargs
-        Options for pandas.read_csv()
+        Extra args for function()
 
     Returns
     -------
-    Either a list of dataframes if concat_axis not specified or a single dataframe if concat_axis specified.
+    pd.DataFrame
+
     """
-    lst_dataframes = []
-
-    if concat_axis not in [0, 1, None]:
-        raise ValueError(f"Invalid value {concat_axis} for concat_axis.")
-
-    for i, filename in enumerate(file_list):
-        if verbose:
-            print(f"At file {i} of {len(file_list)}")
-        this_df = pd.read_csv(filename, **kwargs)
-        if this_df.shape[1] > 1 and concat_axis == 1:
-            # @TODO can we remove this error?
-            raise ValueError("Currently can only stack a single column from each file. Pass usecols argument.")
-        lst_dataframes.append(this_df)
-
-    if concat_axis == 0:
-        return pd.concat(lst_dataframes, axis=0, ignore_index=True)
-    elif concat_axis == 1:
-        joined_dataframe = pd.concat(lst_dataframes, axis=1, sort=True)
-        if rename_columns is not None:
-            joined_dataframe.columns = rename_columns
-        return joined_dataframe
-    else:
-        return lst_dataframes
+    assert callable(function), f"function arg must be callable"
+    lst_dfs = []
+    for value in list_of_inputs:
+        df = function(value, **kwargs)
+        lst_dfs.append(df)
+    return pd.concat(lst_dfs, axis=axis)
