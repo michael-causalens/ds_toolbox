@@ -104,6 +104,8 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     a matplotlib.figure.Figure object if retplot is True
     """
     df = df_in.copy()
+    if isinstance(df, pd.Series):
+        df = df.to_frame()
 
     # do not limit number of plots if colours are specified, will check if the numbers match up later
     if kwargs.get("cmap") or kwargs.get("color"):
