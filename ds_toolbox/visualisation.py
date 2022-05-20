@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
@@ -242,8 +241,8 @@ def plot_missingness(data_in, start_date=None, end_date=None, tick_freq=None, ti
     if tick_freq is not None:
         xticks = np.arange(0, len(data) - 1, tick_freq, dtype=int)
         xticklabels = data.index[xticks]
-        sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False, xticklabels=xticklabels)
-        plt.xticks(xticks, rotation=45, ha="right")
+        sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False)
+        plt.xticks(xticks, labels=xticklabels, rotation=45, ha="right")
     else:
         sns.heatmap(data.T.isnull(), cmap=sns.cm.rocket_r, cbar=False)
         plt.xticks(rotation=45, ha="right")
