@@ -98,6 +98,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
                              figsize - tuple, defaults to (15, 6)
                              dpi - int, figure resolution, defaults to 72
                              linewidth - int, defaults to 2
+                             alpha - default 1
 
     Returns
     -------
@@ -146,8 +147,9 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     else:
         figsize = (ax.figure.get_figwidth(), ax.figure.get_figheight())
     linewidth = kwargs.get("linewidth", 2)
+    alpha = kwargs.get("alpha")
     if filled:
-        df.plot.area(stacked=True, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
+        df.plot.area(stacked=True, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True, alpha=alpha)
     else:
         # for a line plot, only plot individual data points if fewer than 100, otherwise looks cluttered
         if "style" not in kwargs:
@@ -157,7 +159,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
                 linestyle = "-o"
         else:
             linestyle = kwargs["style"]
-        df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True)
+        df.plot(style=linestyle, ax=ax, color=color, figsize=figsize, lw=linewidth, x_compat=True, alpha=alpha)
 
     if tick_fmt is not None:
         ax.xaxis.set_major_formatter(mdates.DateFormatter(tick_fmt))

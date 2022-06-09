@@ -11,7 +11,7 @@ import pandas as pd
 from functools import reduce
 from scipy.stats import t
 
-from typing import List, Optional, Union, Callable, Any
+from typing import List, Optional, Union, Callable, Any, Iterable
 
 
 def count_nans(df_in, header=None, sort=False):
@@ -396,3 +396,27 @@ def dataframe_loop_and_concat(function: Callable, list_of_inputs: List[Any], axi
         df = function(value, **kwargs)
         lst_dfs.append(df)
     return pd.concat(lst_dfs, axis=axis)
+
+
+def clip(df: pd.Series, q: Iterable):
+    """
+    Clip aka winzorise outliers: replace values outside given quantiles with the quantiles.
+    e.g. clip(df, (0.01, 0.99)) inserts the 1% and 99% percentiles for any values outside that.
+
+    Parameters
+    ----------
+    df : pd.Series
+        Currently raises error if not a Series. Will eventually support list, np.array, DataFrame etc.
+    q : iterable
+        2 floats between 0 and 1
+
+    Returns
+    -------
+    Clipped version of the input data
+    """
+    assert isinstance(df, pd.Series), f"Only Series currently supported. Use a for loop for DataFrame input."
+    assert len(q) == 2, f"Expected exactly 2 quantiles, got {len(q)}"
+    df_out = df.copy()
+    boundaries = df_out.quantile(q=q)
+    df_out = df_out.clip(*boundaries)
+    return df_out
