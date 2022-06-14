@@ -99,6 +99,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
                              dpi - int, figure resolution, defaults to 72
                              linewidth - int, defaults to 2
                              alpha - default 1
+                             title - str, default is None
 
     Returns
     -------
@@ -167,6 +168,8 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     if tick_freq is not None:
         ticks = _interpret_tick_freq(df, tick_freq)
         ax.xaxis.set_major_locator(ticks)
+
+    ax.set_title(kwargs.get("title"), None)
 
     ax.xaxis.grid(True, which='major', linestyle=':')
     ax.yaxis.grid(True, which='major', linestyle=':')
