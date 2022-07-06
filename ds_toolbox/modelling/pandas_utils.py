@@ -14,56 +14,42 @@ from scipy.stats import t
 from typing import List, Optional, Union, Callable, Any, Iterable
 
 
-def count_nans(df_in, header=None, sort=False):
+def count_nans(df_in, header=None, sort=False, fraction=False, as_percent=False):
     """
-    Get number of nans in each column
+    Get number/fraction of nans in each column
 
     Parameters
     ----------
     df_in : pandas DataFrame or Series
+        data
     header : str (optional)
         Name of the output DataFrame. Default is "nan_counts"
     sort : bool, default False
         Sort columns from fewest nans to most nans.
+    fraction: bool, default False
+        Show fraction instead of counts
+    as_percent : bool, default False
+        Display fractions as percentages if fraction=True
 
     Returns
     -------
     pandas.Dataframe with original columns as index and number of nans in each column as value
     """
     if header is None:
-        header = "nan_counts"
-    nan_counts = df_in.isnull().sum().to_frame(header)
+        if fraction:
+            header = "nan_fraction"
+        else:
+            header = "nan_count"
+
+    nan_counts = df_in.isnull().sum()
     if sort:
-        nan_counts = nan_counts.sort_values(by=header)
-    return nan_counts
+        nan_counts = nan_counts.sort_values()
+    if fraction:
+        nan_counts /= len(df_in)
+        if as_percent:
+            nan_counts = nan_counts.applymap("{:.2%}".format)
 
-
-def count_nan_fracs(df_in, header=None, sort=False, percent=False):
-    """
-    Get fraction of nans in each column
-
-    Parameters
-    ----------
-    df_in : pandas DataFrame or Series
-    header : str, optional
-        Name of the output DataFrame. Default is "nan_fracs"
-    sort : bool, default False
-        Sort columns from fewest nans to most nans.
-    percent : bool, default False
-        Display as percentage instead of fractions
-
-    Returns
-    -------
-    pandas.Dataframe with original columns as index and fraction of nans in each column as value
-    """
-    if header is None:
-        header = "nan_fracs"
-    nan_fracs = (df_in.isnull().sum()/len(df_in)).to_frame(header)
-    if sort:
-        nan_fracs = nan_fracs.sort_values(by=header)
-    if percent:
-        nan_fracs = nan_fracs.applymap("{:.2%}".format)
-    return nan_fracs
+    return nan_counts.to_frame(header)
 
 
 def _get_series_signs(data_in):
@@ -372,7 +358,20 @@ def dataframe_loop_and_concat(function: Callable, list_of_inputs: List[Any], axi
     """
     Apply a function that returns a Series/DataFrame for each item in a list,
     then concatenate the resulting list along 'axis'.
+
     Typical usage is to column stack a list of DataFrames with the same index.
+    For example, instead of doing
+    ```
+    lst_dfs = []
+    for item in items:
+        df = some_function(items, **kwargs)
+        lst_dfs.append(df)
+    df_all = pd.concat(lst_dfs, axis=axis)
+    ```
+    You can do
+    ```
+    df_all = dataframe_loop_and_concat(some_function, items, axis=axis, **kwargs)
+    ```
 
     Parameters
     ----------
@@ -402,6 +401,7 @@ def clip(df: pd.Series, q: Iterable):
     """
     Clip aka winzorise outliers: replace values outside given quantiles with the quantiles.
     e.g. clip(df, (0.01, 0.99)) inserts the 1% and 99% percentiles for any values outside that.
+    TODO: support DataFrame input
 
     Parameters
     ----------
