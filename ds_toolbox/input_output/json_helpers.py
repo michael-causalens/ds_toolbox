@@ -37,7 +37,7 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def write_json(out_dict, out_path, sort_keys=True):
+def write_json(out_dict, out_path, sort_keys=True, cls=None):
     """
     Output dictionary/JSON tree to file
 
@@ -49,6 +49,8 @@ def write_json(out_dict, out_path, sort_keys=True):
         Name of output file
     sort_keys : bool, default True
         Alphanumerically sort keys before writing
+    cls: json.JSONEncoder
+        custom decoder for json serialising
 
     """
     if sort_keys:
@@ -58,10 +60,10 @@ def write_json(out_dict, out_path, sort_keys=True):
     else:
         d = out_dict
     with open(out_path, "w") as f:
-        json.dump(d, f, indent=2)
+        json.dump(d, f, indent=2, cls=cls)
 
 
-def read_json(in_path):
+def read_json(in_path, cls=None):
     """
     Load JSON from file
 
@@ -69,13 +71,15 @@ def read_json(in_path):
     ----------
     in_path : str
         Full or relative path to json file.
+    cls: json.JSONEncoder
+        custom decoder for json serialising
 
     Returns
     -------
     dict
     """
     with open(in_path, "r") as f_in:
-        return json.load(f_in)
+        return json.load(f_in, cls=cls)
 
 
 def read_jsonlines(in_path, output="list"):
