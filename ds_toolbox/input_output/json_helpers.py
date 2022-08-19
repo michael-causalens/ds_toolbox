@@ -10,6 +10,31 @@ from warnings import warn
 from collections import OrderedDict
 
 
+def nan_to_none(obj):
+    # todo: move this to low-level
+    if isinstance(obj, dict):
+        return {k: nan_to_none(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [nan_to_none(v) for v in obj]
+    elif isinstance(obj, float) and np.isnan(obj):
+        return None
+    return obj
+
+
+class NanConverter(json.JSONEncoder):
+    def default(self, obj):
+        # possible other customizations here
+        pass
+
+    def encode(self, obj, *args, **kwargs):
+        obj = nan_to_none(obj)
+        return super().encode(obj, *args, **kwargs)
+
+    def iterencode(self, obj, *args, **kwargs):
+        obj = nan_to_none(obj)
+        return super().iterencode(obj, *args, **kwargs)
+
+
 class NumpyEncoder(json.JSONEncoder):
     """ Custom encoder for numpy data types """
     def default(self, obj):
