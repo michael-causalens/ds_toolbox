@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from matplotlib.figure import Figure
@@ -29,7 +30,8 @@ plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise
 
 def rgb2hex(*args):
     """
-    Get a hexadecimal color code from its RGB values
+    Get a hexadecimal color code from its (0-255) RGB values
+    # TODO: allow 0-1 values
 
     Parameters
     ----------
@@ -43,6 +45,35 @@ def rgb2hex(*args):
     for arg in args:
         assert arg in range(256), f"{arg} is invalid. Expected integer in range 0-255"
     return '#%02x%02x%02x' % args
+
+
+def palette_to_hexcodes(palette_name: str, n: int, as_hex=True):
+    """
+    Get hexcodes of n evenly spaced colours on a seaborn/matplotlib named palette
+
+    Parameters
+    ----------
+    palette_name: str
+        Valid matplotlib palette e.g. viridis
+    n : int
+        Number of colours ro return
+    as_hex: bool
+        Return a hex string instead of a 3-tuple of floats
+
+    Returns
+    -------
+    List of strs or tuples
+    """
+    palette = sns.color_palette(palette_name, n_colors=256)
+    colors = []
+    for i in range(n):
+        color_idx = int(len(palette) / (n - 1) * i)
+        color_idx = min(color_idx, len(palette) - 1)  # avoid index error on the last one
+        color = palette[color_idx]
+        if as_hex:
+            color = mpl.colors.rgb2hex(color)
+        colors.append(color)
+    return colors
 
 
 def barplot(df_in, normed=False, retplot=False, **kwargs):
