@@ -15,7 +15,7 @@ from matplotlib import cm
 from pandas.tseries.frequencies import to_offset
 from pandas.plotting import register_matplotlib_converters
 from statsmodels.tsa.stattools import adfuller
-from ds_toolbox.visualisation import plot_colors
+from ds_toolbox.visualisation import PLOT_COLORS
 from pandas.tseries.offsets import BDay
 from typing import Union, Optional
 
@@ -43,7 +43,7 @@ def _plot_check_input(df, limit_plots: Optional[bool] = True):
     """
     _check_input(df)
 
-    max_plots = len(plot_colors)
+    max_plots = len(PLOT_COLORS)
     if len(df.columns) > max_plots and limit_plots:
         raise ValueError(f"requested number of plots {len(df.columns)} exceeds maximum {max_plots}")
 
@@ -121,7 +121,9 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
     if end_date is not None:
         df = df[df.index <= end_date]
     if labels is not None:
-        assert len(labels) == len(df.columns), f"Mismatch: {len(labels)} labels provided with {len(df.columns)}."
+        if isinstance(labels, str):
+            labels = [labels]
+        assert len(labels) == len(df.columns), f"Length mismatch: {len(labels)} labels for {len(df.columns)} columns."
         df.columns = labels
 
     if normalized:
@@ -140,7 +142,7 @@ def plot(df_in, normalized=False, standardized=False, start_date=None, end_date=
         if isinstance(color, list) and len(color) != len(df.columns):
             raise ValueError(f"Number of colours requested does not match number of columns to plot.")
     else:
-        color = plot_colors[: len(df.columns)]
+        color = PLOT_COLORS[: len(df.columns)]
 
     if ax is None:
         fig, ax = plt.subplots(dpi=kwargs.get("dpi"))
@@ -306,7 +308,7 @@ def plot_candlesticks(data_in, start_date=None, end_date=None, tick_freq=None, t
         return fig
 
 
-def get_crosscorr(datax, datay, start_date=None, end_date=None, lag=0):
+def get_crosscorr(datax: pd.Series, datay: pd.Series, start_date=None, end_date=None, lag=0):
     """ 
     Lag-N cross correlation. Based on pandas.Series.autocorr().
     Simple measure of causal effect of datay on datax,
