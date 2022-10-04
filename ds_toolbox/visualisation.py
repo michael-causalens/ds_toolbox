@@ -23,9 +23,29 @@ from bokeh.plotting import figure
 from bokeh.models import HoverTool
 from bokeh.palettes import all_palettes
 
-plot_colors = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
+from typing import Union, List, Dict
+
+PLOT_COLORS = ["red", "dodgerblue", "forestgreen", "gold", "magenta", "turquoise", "darkorange", "darkviolet",
                "firebrick", "navy", "lime", "goldenrod", "mediumpurple", "royalblue", "orange", "violet",
                "springgreen", "sandybrown", "aquamarine", "skyblue", "salmon", "chartreuse", "indigo"]
+
+CAUSALENS_COLORS = {"blue": "#3796F6",
+                    "coral": "#F6543F",
+                    "gold": "#F6B03F",
+                    "silver": "#808080",
+                    "black": "#14141B",
+                    "mint": "#64D3D2",
+                    "navy": "#13396A",
+                    "green": "#4DBD74"}
+
+CAUSALENS_COLORS_TINT = {"blue_tint": "#65AFF8",
+                         "coral_tint": "#F87665",
+                         "gold_tint": "#F8C065",
+                         "silver_tint": "#999999",
+                         "black_tint": "#1D1D26",
+                         "mint_tint": "#8CDEDE",
+                         "navy_tint": "#426188",
+                         "green_tint": "#71CA90"}
 
 
 def rgb2hex(*args):
@@ -47,33 +67,54 @@ def rgb2hex(*args):
     return '#%02x%02x%02x' % args
 
 
-def palette_to_hexcodes(palette_name: str, n: int, as_hex=True):
+def hexcodes_from_palette(palette_name: str, n: int):
     """
-    Get hexcodes of n evenly spaced colours on a seaborn/matplotlib named palette
+    Get a list of n color hexcodes from a named matplotlib/seaborn palette.
 
     Parameters
     ----------
     palette_name: str
-        Valid matplotlib palette e.g. viridis
-    n : int
-        Number of colours ro return
-    as_hex: bool
-        Return a hex string instead of a 3-tuple of floats
+        Named palette
+    n: int
+        Number of evenly spaced colors to get
 
     Returns
     -------
-    List of strs or tuples
+    List of strs
     """
-    palette = sns.color_palette(palette_name, n_colors=256)
-    colors = []
-    for i in range(n):
-        color_idx = int(len(palette) / (n - 1) * i)
-        color_idx = min(color_idx, len(palette) - 1)  # avoid index error on the last one
-        color = palette[color_idx]
-        if as_hex:
-            color = mpl.colors.rgb2hex(color)
-        colors.append(color)
-    return colors
+    cmap = mpl.cm.get_cmap(palette_name, n)
+
+    # segmented color maps are interpolated, need to call cmap(i) to get color
+    if isinstance(cmap, mpl.colors.LinearSegmentedColormap):
+        codes = [mpl.colors.rgb2hex(cmap(i)) for i in range(cmap.N)]
+
+    # listed color maps return a list of hexcodes directly
+    elif isinstance(cmap, mpl.colors.ListedColormap):
+        codes = [mpl.colors.rgb2hex(c) for c in cmap.colors]
+
+    else:
+        raise ValueError(f"Got invalid type {type(cmap)} for {palette_name} palette.")
+
+    return codes
+
+
+def view_palette(colors: Union[List, Dict], label_axis=False):
+    """
+    Plot a bar chart to visualise colors, either as a list of names/hexcodes or a {'name': #hexcode} dict
+    """
+    if isinstance(colors, dict):
+        for i, (col, code) in enumerate(colors.items()):
+            x = i + 1
+            plt.bar(x=x, height=x, color=code, label=col)
+    elif isinstance(colors, list):
+        for i, col in enumerate(colors):
+            x = i + 1
+            plt.bar(x=x, height=x, color=col, label=str(x))
+
+    # plt.legend()
+    if label_axis:
+        plt.xticks(range(1, len(colors) + 1), colors, rotation=45, )  # ha="right")
+    plt.show()
 
 
 def barplot(df_in, normed=False, retplot=False, **kwargs):
@@ -229,7 +270,7 @@ def multiscatter(X, labels, max_plots=None, keep_labels=None, **kwargs):
         if keep_labels is not None and label not in keep_labels:
             continue
         plot_data = X[(labels == label)]
-        plt.scatter(plot_data[:, 0], plot_data[:, 1], color=plot_colors[i], label=label)
+        plt.scatter(plot_data[:, 0], plot_data[:, 1], color=PLOT_COLORS[i], label=label)
 
     plt.xlim(kwargs.get("xlim"))
     plt.ylim(kwargs.get("ylim"))
@@ -336,7 +377,7 @@ def bokeh_chart(timeseries_df, normalized=False, legend_labels: list = None,
     elif colors is not None:
         used_colors = colors
     else:
-        shuffled_colors = plot_colors.copy()
+        shuffled_colors = PLOT_COLORS.copy()
         np.random.shuffle(shuffled_colors)
         used_colors = shuffled_colors
 
