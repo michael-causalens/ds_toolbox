@@ -7,6 +7,7 @@ visualisation.py
 
 """
 import os
+import sys
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -486,8 +487,14 @@ def customise_fonts(mpl_plot, font_name, font_size, font_folder=None):
     else:
         raise TypeError(f"Expected a Figure, pyplot.Axes or a list of pyplot.Axes, not a {type(mpl_plot)}.")
 
+    # where fonts are installed depends on OS
     if font_folder is None:
-        font_file_path = f"{os.environ['HOME']}/Library/Fonts/{font_name}.ttf"  # default Mac locations
+        if sys.platform == "darwin":
+            font_file_path = f"{os.environ['HOME']}/Library/Fonts/{font_name}.ttf"  # default Mac location
+        elif sys.platform == "linux":
+            font_file_path = f"{os.environ['HOME']}/mpl_fonts/{font_name}.ttf"
+        else:
+            raise ValueError(f"Invalid OS {sys.platform}")
     else:
         font_file_path = os.path.join(font_folder, f"{font_name}.ttf")
     prop = fm.FontProperties(fname=font_file_path, size=font_size)
